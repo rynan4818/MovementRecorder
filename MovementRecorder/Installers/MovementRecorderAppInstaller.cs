@@ -1,5 +1,4 @@
-﻿/*
-//using MovementRecorder.Models;
+﻿using MovementRecorder.Models;
 using Zenject;
 
 namespace MovementRecorder.Installers
@@ -8,8 +7,7 @@ namespace MovementRecorder.Installers
     {
         public override void InstallBindings()
         {
-            //this.Container.BindInterfacesAndSelfTo<MovementRecorderController>().AsSingle().NonLazy();
+            this.Container.BindInterfacesAndSelfTo<RecordData>().AsSingle().NonLazy();
         }
     }
 }
-*/
