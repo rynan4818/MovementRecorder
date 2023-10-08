@@ -83,8 +83,8 @@ namespace MovementRecorder.Models
         /// </summary>
         private void OnDestroy()
         {
-            this._recordData._avatarTransforms = null;
             this.connectionClosed.Cancel();
+            _= this._recordData.SavePlaydataAsync();
         }
         #endregion
         /// <summary>

@@ -8,14 +8,12 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
-using Zenject;
-using BS_Utils.Utilities;
+using System.Linq;
 
 namespace MovementRecorder.Models
 {
-    public class RecordData : IInitializable, IDisposable
+    public class RecordData
     {
-        private bool _disposedValue;
         public static SemaphoreSlim RecordsSemaphore = new SemaphoreSlim(1, 1);
         public Transform[] _avatarTransforms;
         public string[] _avatarObjectNames;
@@ -26,43 +24,30 @@ namespace MovementRecorder.Models
         public double _recordTimeMin;
         public double _recordTimeTotal;
 
-        public void Initialize()
+        public void InitializeData()
         {
-            BSEvents.LevelFinished += this.OnLevelFinished;
-        }
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!this._disposedValue)
-            {
-                if (disposing)
-                {
-                    BSEvents.LevelFinished -= this.OnLevelFinished;
-                }
-                this._disposedValue = true;
-            }
-        }
-        public void Dispose()
-        {
-            // このコードを変更しないでください。クリーンアップ コードを 'Dispose(bool disposing)' メソッドに記述します
-            this.Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-        public void OnLevelFinished(object scene, LevelFinishedEventArgs eventArgs)
-        {
-            _ = this.SavePlaydataAsync();
+            this._avatarTransforms = null;
+            this._avatarObjectNames = null;
+            this._recordData = null;
+            this._avatarScale = Vector3.zero;
+            this._recordCount = 0;
+            this._recordTimeMax = 0;
+            this._recordTimeMin = 0;
+            this._recordTimeTotal = 0;
         }
 
         public bool ResetData(int recordSize)
         {
-            this._recordCount = 0;
-            this._recordTimeMax = 0;
-            this._recordTimeMin = 0;
+            this.InitializeData();
             var avatar = GameObject.Find("Avatar Container/SpawnedAvatar(EruruChan_D)")?.GetComponent<Transform>();
             if (avatar == null)
                 return false;
             this._avatarScale = avatar.localScale;
             Plugin.Log?.Info($"{this._avatarScale}");
-            this._avatarTransforms = GameObject.Find("Avatar Container/SpawnedAvatar(EruruChan_D)/CustomAvatar_Eruru_Twintail_Long_high/Armature")?.GetComponentsInChildren<Transform>();
+            var avatarArmature = GameObject.Find("Avatar Container/SpawnedAvatar(EruruChan_D)/CustomAvatar_Eruru_Twintail_Long_high/Armature")?.GetComponentsInChildren<Transform>();
+            var leftSaber = GameObject.Find("VRGameCore/LeftHand/LeftSaber/SfSaberModelController(Clone)/SF Saber/LeftSaber(Clone)")?.GetComponentsInChildren<Transform>();
+            var rightSaber = GameObject.Find("VRGameCore/RightHand/RightSaber/SfSaberModelController(Clone)/SF Saber/RightSaber(Clone)")?.GetComponentsInChildren<Transform>();
+            this._avatarTransforms = avatarArmature.Union(leftSaber).Union(rightSaber).ToArray();
             if (this._avatarTransforms == null)
                 return false;
             var avatarObjectLength = this._avatarTransforms.Length;
@@ -90,7 +75,7 @@ namespace MovementRecorder.Models
                 this._recordData[this._recordCount].Item2[i] = (this._avatarTransforms[i].position, this._avatarTransforms[i].rotation);
             this._recordCount++;
             if (this._recordData.Length <= this._recordCount)
-                Array.Resize(ref this._recordData, this._recordData.Length + 1000);
+                Array.Resize(ref this._recordData, this._recordData.Length + 100);
             if (this._recordTimeMax < timaer.Elapsed.TotalMilliseconds)
                 this._recordTimeMax = timaer.Elapsed.TotalMilliseconds;
             if (this._recordTimeMin > timaer.Elapsed.TotalMilliseconds || this._recordTimeMin == 0)
@@ -143,8 +128,9 @@ namespace MovementRecorder.Models
             {
                 Plugin.Log?.Error(ex.ToString());
             }
-            Plugin.Log?.Info($"Save Time:{timaer.Elapsed.TotalMilliseconds}ms  Record Size:{this._recordCount} Time Ave:{this._recordTimeTotal / this._recordCount}ms Max:{this._recordTimeMax}ms Min:{this._recordTimeMin}ms");
+            Plugin.Log?.Info($"Save Time:{timaer.Elapsed.TotalMilliseconds}ms  Record Count:{this._recordCount} One Time Record Ave:{this._recordTimeTotal / this._recordCount}ms Max:{this._recordTimeMax}ms Min:{this._recordTimeMin}ms");
             timaer.Stop();
+            this.InitializeData();
         }
         public async Task<bool> WriteAllTextAsync(string path, string contents)
         {
