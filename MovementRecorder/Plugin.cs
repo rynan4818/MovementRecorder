@@ -1,6 +1,7 @@
 ﻿using MovementRecorder.Installers;
 using IPA;
 using IPA.Config;
+using IPA.Config.Stores;
 using SiraUtil.Zenject;
 using HarmonyLib;
 using IPALogger = IPA.Logging.Logger;
@@ -28,8 +29,8 @@ namespace MovementRecorder
             Log.Info("MovementRecorder initialized.");
 
             //BSIPAのConfigを使用する場合はコメントを外します
-            //Configuration.PluginConfig.Instance = conf.Generated<Configuration.PluginConfig>();
-            //Log.Debug("Config loaded");
+            Configuration.PluginConfig.Instance = conf.Generated<Configuration.PluginConfig>();
+            Log.Debug("Config loaded");
 
             //使用するZenjectのインストーラーのコメントを外します
             zenjector.Install<MovementRecorderAppInstaller>(Location.App);

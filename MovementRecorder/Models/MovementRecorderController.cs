@@ -1,7 +1,6 @@
-﻿using System;
+﻿using MovementRecorder.Configuration;
+using MovementRecorder.HarmonyPatches;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using Zenject;
 
@@ -13,16 +12,16 @@ namespace MovementRecorder.Models
     /// </summary>
 	public class MovementRecorderController : MonoBehaviour
     {
-        public static readonly float RecordInterval = 0.033f;
-        private readonly CancellationTokenSource connectionClosed = new CancellationTokenSource();
         private IAudioTimeSource _audioTimeSource;
+        private GameplayCoreSceneSetupData _gameplayCoreSceneSetupData;
         private RecordData _recordData;
         public bool _songStart;
 
         [Inject]
-        private void Constractor(IAudioTimeSource audioTimeSource, RecordData recordData)
+        private void Constractor(IAudioTimeSource audioTimeSource, GameplayCoreSceneSetupData gameplayCoreSceneSetupData, RecordData recordData)
         {
             this._audioTimeSource = audioTimeSource;
+            this._gameplayCoreSceneSetupData = gameplayCoreSceneSetupData;
             this._recordData = recordData;
         }
 
@@ -32,14 +31,14 @@ namespace MovementRecorder.Models
         /// </summary>
         private void Awake()
         {
+            this._songStart = false;
+            StartSongPatch.StartSong += this.OnStartSong;
         }
         /// <summary>
         /// Only ever called once on the first frame the script is Enabled. Start is called after every other script's Awake() and before Update().
         /// </summary>
         private void Start()
         {
-            this._songStart = false;
-            _ = this.SongStartWait();
         }
 
         /// <summary>
@@ -49,7 +48,7 @@ namespace MovementRecorder.Models
         {
             if (!this._songStart)
                 return;
-            if (this._audioTimeSource.songTime - this._recordData.GetLastRecordTiem() < RecordInterval)
+            if (this._audioTimeSource.songTime - this._recordData.GetLastRecordTiem() < PluginConfig.Instance.recordInterval)
                 return;
             this._recordData.TransformRecord(this._audioTimeSource.songTime);
         }
@@ -83,41 +82,18 @@ namespace MovementRecorder.Models
         /// </summary>
         private void OnDestroy()
         {
-            this.connectionClosed.Cancel();
+            StartSongPatch.StartSong -= this.OnStartSong;
             _= this._recordData.SavePlaydataAsync();
         }
         #endregion
-        /// <summary>
-        /// 曲スタートまでstart更新を待機
-        /// </summary>
-        /// <returns></returns>
-        public async Task SongStartWait()
+        public void OnStartSong()
         {
-            var songTime = this._audioTimeSource.songTime;
-            var token = connectionClosed.Token;
-            try
-            {
-                while (this._audioTimeSource.songTime <= songTime)
-                {
-                    token.ThrowIfCancellationRequested();
-                    await Task.Delay(10);
-                }
-            }
-            catch (Exception)
-            {
-                return;
-            }
-            Plugin.Log?.Info($"SongStart:{this._audioTimeSource.songTime}s");
-            var recordSize = (int)(this._audioTimeSource.songLength / RecordInterval) + 100;
-            Plugin.Log?.Info($"Record Size:{recordSize}");
-            var timaer = new Stopwatch();
-            timaer.Start();
-            var resetRsult = this._recordData.ResetData(recordSize);
-            Plugin.Log?.Info($"Reset Time:{timaer.Elapsed.TotalMilliseconds}ms");
-            timaer.Stop();
+            var recordSize = (int)(this._audioTimeSource.songLength / PluginConfig.Instance.recordInterval) + 100;
+            var resetRsult = this._recordData.ResetData(recordSize, this._gameplayCoreSceneSetupData.difficultyBeatmap);
             if (!resetRsult)
                 return;
-            this._recordData.TransformRecord(this._audioTimeSource.songTime);
+            Plugin.Log?.Info($"Record Size:{recordSize} Initialize Time:{this._recordData._initializeTime}ms");
+            this._recordData.TransformRecord(this._audioTimeSource.songTime, false);
             this._songStart = true;
         }
     }

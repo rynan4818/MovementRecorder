@@ -47,6 +47,11 @@
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
+    <Reference Include="BeatmapCore">
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BeatmapCore.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
     <Reference Include="BS_Utils">
       <HintPath>$(BeatSaberDir)\Plugins\BS_Utils.dll</HintPath>
       <Private>False</Private>
@@ -60,6 +65,11 @@
     <Reference Include="SiraUtil">
       <HintPath>$(BeatSaberDir)\Plugins\SiraUtil.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="SongCore">
+      <HintPath>$(BeatSaberDir)\Plugins\SongCore.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -126,7 +136,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HarmonyPatches\CustomPreviewBeatmapLevelPatch.cs" />
+    <Compile Include="HarmonyPatches\GetCoverImageAsyncPatch.cs" />
+    <Compile Include="HarmonyPatches\StartSongPatch.cs" />
     <Compile Include="Installers\MovementRecorderAppInstaller.cs" />
     <Compile Include="Installers\MovementRecorderMenuInstaller.cs" />
     <Compile Include="Installers\MovementRecorderPlayerInstaller.cs" />
