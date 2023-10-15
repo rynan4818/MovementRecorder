@@ -18,6 +18,7 @@ namespace MovementRecorder.Models
     {
         public static readonly string MovementRecorderDirectory = "MovementRecorder";
         public static SemaphoreSlim RecordsSemaphore = new SemaphoreSlim(1, 1);
+        public event Action<string> recorderLog;
         public List<(UnityEngine.Object, string)> _allObjects;
         public List<(Vector3, Quaternion, string)> _allPosRot;
         public List<string> _motionEnabled;
@@ -32,6 +33,7 @@ namespace MovementRecorder.Models
         public string _serializedName;
         public string _difficulty;
         public bool _wipLevel;
+        public int _recordSize;
         public int _recordCount;
         public double _initializeTime;
         public double _recordTimeMax;
@@ -60,6 +62,7 @@ namespace MovementRecorder.Models
             this._wipLevel = false;
             this._initializeTime = 0;
             this._recordCount = 0;
+            this._recordSize = 0;
             this._recordTimeMax = 0;
             this._recordTimeMin = 0;
             this._recordTimeTotal = 0;
@@ -72,6 +75,7 @@ namespace MovementRecorder.Models
             timaer.Start();
             this.ResetData();
             this.ResetCount();
+            this._recordSize = recordSize;
             this._levelID = difficultyBeatmap.level.levelID;
             this._songName = difficultyBeatmap.level.songName;
             this._serializedName = difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
@@ -133,7 +137,10 @@ namespace MovementRecorder.Models
                     Transform transform = obj.Item1 as Transform;
                     if (transform == null)
                         continue;
-                    this._allPosRot.Add((transform.localPosition, transform.localRotation, obj.Item2));
+                    if (PluginConfig.Instance.researchWorldSpace)
+                        this._allPosRot.Add((transform.position, transform.rotation, obj.Item2));
+                    else
+                        this._allPosRot.Add((transform.localPosition, transform.localRotation, obj.Item2));
                     if (transform.localScale != Vector3.one)
                         this._motionScales.Add((transform.localScale, obj.Item2));
                 }
@@ -159,8 +166,12 @@ namespace MovementRecorder.Models
                     Transform transform = obj.Item1 as Transform;
                     if (transform == null)
                         continue;
-                    if (posRot.Item1 != transform.localPosition || posRot.Item2 != transform.localRotation)
+                    if (PluginConfig.Instance.researchWorldSpace)
+                        if (posRot.Item1 != transform.position || posRot.Item2 != transform.rotation)
                         this._motionEnabled.Add(obj.Item2);
+                    else
+                        if (posRot.Item1 != transform.localPosition || posRot.Item2 != transform.localRotation)
+                            this._motionEnabled.Add(obj.Item2);
                 }
             }
         }
@@ -201,7 +212,7 @@ namespace MovementRecorder.Models
             var timaer = new Stopwatch();
             timaer.Start();
             var saveData = new MovementJson();
-            saveData.recordInterval = PluginConfig.Instance.recordInterval;
+            saveData.recordFrameRate = PluginConfig.Instance.recordFrameRate;
             saveData.motionCaptures = this._motionCaptures;
             saveData.objectNames = this._objectNames;
             saveData.objectScales = new List<Scale>();
@@ -236,15 +247,18 @@ namespace MovementRecorder.Models
                 savePath = Path.Combine(IPA.Utilities.UnityGame.UserDataPath, MovementRecorderDirectory);
             if (!Directory.Exists(savePath))
                 Directory.CreateDirectory(savePath);
-            var filename = $"{DateTime.Now:yyyyMMddHHmmss}-{this._songName}-{this._difficulty}-{this._serializedName}-{(int)GetLastRecordTiem()}s.json";
+            var filename = $"{DateTime.Now:yyyyMMddHHmmss}-{this._songName}-{this._difficulty}-{this._serializedName}-{(int)this.GetLastRecordTiem()}s.json";
             var regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
             var r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
             filename = r.Replace(filename, "_");
+            long saveFileSize = 0;
             try
             {
                 var serialized = JsonConvert.SerializeObject(saveData, Formatting.None);
                 if (!await this.WriteAllTextAsync(Path.Combine(savePath, filename), serialized))
                     throw new Exception("Failed save Movement Data");
+                var fi = new FileInfo(Path.Combine(savePath, filename));
+                saveFileSize = fi.Length;
             }
             catch (Exception ex)
             {
@@ -257,11 +271,12 @@ namespace MovementRecorder.Models
                     this._motionEnabled.Sort();
                     this._motionScales.Sort((a, b) => a.Item2.CompareTo(b.Item2));
                     var researchData = new ResearchJson();
+                    researchData.worldSpace = PluginConfig.Instance.researchWorldSpace;
                     researchData.motionEnabled = this._motionEnabled.Distinct().ToList();
-                    researchData.motionScales = new List<MotionScales>();
+                    researchData.otherOneScales = new List<MotionScales>();
                     foreach (var scale in this._motionScales.Distinct())
                     {
-                        researchData.motionScales.Add(new MotionScales()
+                        researchData.otherOneScales.Add(new MotionScales()
                         {
                             objectName = scale.Item2,
                             scale = $"{scale.Item1.x} {scale.Item1.y} {scale.Item1.z}"
@@ -276,9 +291,14 @@ namespace MovementRecorder.Models
                     Plugin.Log?.Error(ex.ToString());
                 }
             }
-            this.ResetData();
             this._saveTime = timaer.Elapsed.TotalMilliseconds;
             Plugin.Log?.Info($"Save Time:{this._saveTime}ms  Record Count:{this._recordCount} One Time Record Ave:{this._recordTimeTotal / this._recordCount}ms Max:{this._recordTimeMax}ms Min:{this._recordTimeMin}ms");
+            var log = $"=== Movement Recorder Log ===\nInitialize Time:{this._initializeTime}ms \t\tCapture Object Count:{this._transforms.Length}\nRecord Initialize Size:{this._recordSize} \t" +
+                $"Record Count:{this._recordCount}\nLast Song Time:{this.GetLastRecordTiem()}s\tSave File Time:{this._saveTime}ms\n" +
+                $"Save File Size:{Math.Floor(saveFileSize / 10485.76d) / 100}Mbyte\nOne Movement Recording Time\n" +
+                $"Ave:{Math.Floor(this._recordTimeTotal / this._recordCount * 1000) / 1000}ms \tMax:{this._recordTimeMax}ms \tMin:{this._recordTimeMin}ms";
+            this.recorderLog?.Invoke(log);
+            this.ResetData();
             timaer.Stop();
         }
         public async Task<bool> WriteAllTextAsync(string path, string contents)

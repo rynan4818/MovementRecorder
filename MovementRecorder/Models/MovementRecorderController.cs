@@ -15,6 +15,7 @@ namespace MovementRecorder.Models
         private GameplayCoreSceneSetupData _gameplayCoreSceneSetupData;
         private RecordData _recordData;
         public bool _songStart;
+        public float _recordInterval;
 
         [Inject]
         private void Constractor(IAudioTimeSource audioTimeSource, GameplayCoreSceneSetupData gameplayCoreSceneSetupData, RecordData recordData)
@@ -34,6 +35,10 @@ namespace MovementRecorder.Models
             if (!PluginConfig.Instance.enabled)
                 return;
             StartSongPatch.StartSong += this.OnStartSong;
+            if (PluginConfig.Instance.recordFrameRate > 1)
+                this._recordInterval = 1.0f / (float)PluginConfig.Instance.recordFrameRate;
+            else
+                this._recordInterval = 1.0f;
         }
         /// <summary>
         /// Only ever called once on the first frame the script is Enabled. Start is called after every other script's Awake() and before Update().
@@ -49,7 +54,7 @@ namespace MovementRecorder.Models
         {
             if (!this._songStart)
                 return;
-            if (this._audioTimeSource.songTime - this._recordData.GetLastRecordTiem() < PluginConfig.Instance.recordInterval)
+            if (this._audioTimeSource.songTime - this._recordData.GetLastRecordTiem() < this._recordInterval)
                 return;
             this._recordData.TransformRecord(this._audioTimeSource.songTime);
         }
@@ -93,11 +98,11 @@ namespace MovementRecorder.Models
         #endregion
         public void OnStartSong()
         {
-            var recordSize = (int)(this._audioTimeSource.songLength / PluginConfig.Instance.recordInterval) + 100;
+            var recordSize = (int)(this._audioTimeSource.songLength / this._recordInterval) + 100;
             var resetRsult = this._recordData.InitializeData(recordSize, this._gameplayCoreSceneSetupData.difficultyBeatmap);
             if (!resetRsult)
                 return;
-            Plugin.Log?.Info($"Record Size:{recordSize} Initialize Time:{this._recordData._initializeTime}ms");
+            Plugin.Log?.Info($"Record Initialize Size:{recordSize} Initialize Time:{this._recordData._initializeTime}ms");
             this._recordData.TransformRecord(this._audioTimeSource.songTime, false);
             this._songStart = true;
         }

@@ -34,8 +34,8 @@ namespace MovementRecorder
 
             //使用するZenjectのインストーラーのコメントを外します
             zenjector.Install<MovementRecorderAppInstaller>(Location.App);
-            //zenjector.Install<MovementRecorderMenuInstaller>(Location.Menu);
-            zenjector.Install<MovementRecorderPlayerInstaller>(Location.Player);
+            zenjector.Install<MovementRecorderMenuInstaller>(Location.Menu);
+            zenjector.Install<MovementRecorderPlayerInstaller>(Location.StandardPlayer);
         }
 
         [OnStart]

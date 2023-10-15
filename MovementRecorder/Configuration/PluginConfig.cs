@@ -43,7 +43,7 @@ namespace MovementRecorder.Configuration
                 }
             }
         };
-        public virtual bool enabled { get; set; } = true;
+        public virtual bool enabled { get; set; } = false;
         public virtual bool wipOnly { get; set; } = true;
         [NonNullable]
         [UseConverter(typeof(ListConverter<string>))]
@@ -55,8 +55,9 @@ namespace MovementRecorder.Configuration
             NoneCapture,
             NoneCapture
         };
-        public virtual float recordInterval { get; set; } = 0.033f;
-        public virtual bool motionResearch { get; set; } = true;
+        public virtual int recordFrameRate { get; set; } = 30;
+        public virtual bool motionResearch { get; set; } = false;
+        public virtual bool researchWorldSpace { get; set; } = false;
         public virtual float researchCheckSongSec { get; set; } = 1f;
         /// <summary>
         /// これは、BSIPAが設定ファイルを読み込むたびに（ファイルの変更が検出されたときを含めて）呼び出されます

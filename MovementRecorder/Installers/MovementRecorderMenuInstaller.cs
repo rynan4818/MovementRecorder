@@ -1,5 +1,4 @@
-﻿/*
-//using MovementRecorder.Views;
+﻿using MovementRecorder.Views;
 using Zenject;
 
 namespace MovementRecorder.Installers
@@ -8,9 +7,8 @@ namespace MovementRecorder.Installers
     {
         public override void InstallBindings()
         {
-            //this.Container.BindInterfacesAndSelfTo<SettingTabViewController>().FromNewComponentAsViewController().AsSingle().NonLazy();
+            this.Container.BindInterfacesAndSelfTo<SettingTabViewController>().FromNewComponentAsViewController().AsSingle().NonLazy();
             //this.Container.BindInterfacesAndSelfTo<ConfigViewController>().FromNewComponentAsViewController().AsSingle().NonLazy();
         }
     }
 }
-*/

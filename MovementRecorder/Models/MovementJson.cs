@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Security.Policy;
 
 namespace MovementRecorder.Models
 {
     public class MovementJson
     {
-        public float recordInterval { get; set; }
+        public int recordFrameRate { get; set; }
         public List<string> motionCaptures { get; set; }
         public List<string> objectNames { get; set; }
         public List<Scale> objectScales { get; set; }
@@ -29,8 +30,9 @@ namespace MovementRecorder.Models
     }
     public class ResearchJson
     {
+        public bool worldSpace { get; set; }
         public List<string> motionEnabled { get; set; }
-        public List<MotionScales> motionScales { get; set; }
+        public List<MotionScales> otherOneScales { get; set; }
     }
     public class MotionScales
     {
