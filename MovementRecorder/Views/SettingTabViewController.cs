@@ -1,7 +1,6 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.GameplaySetup;
 using BeatSaberMarkupLanguage.ViewControllers;
-using ModestTree;
 using MovementRecorder.Configuration;
 using MovementRecorder.Models;
 using System.Collections.Generic;

@@ -24,6 +24,8 @@ namespace MovementRecorder.Models
         public List<string> _motionEnabled;
         public List<(Vector3, string)> _motionScales;
         public List<string> _motionCaptures;
+        public List<string> _topObjectStrings;
+        public List<string> _rescaleStrings;
         public Transform[] _transforms;
         public List<string> _objectNames;
         public List<Vector3> _scales;
@@ -59,6 +61,8 @@ namespace MovementRecorder.Models
         public void ResetCount()
         {
             this._motionCaptures = new List<string>();
+            this._topObjectStrings = new List<string>();
+            this._rescaleStrings = new List<string>();
             this._wipLevel = false;
             this._initializeTime = 0;
             this._recordCount = 0;
@@ -105,6 +109,9 @@ namespace MovementRecorder.Models
                     if (searchSetting.name != motionCapture)
                         continue;
                     this._motionCaptures.Add(motionCapture);
+                    this._topObjectStrings.Add(searchSetting.topObjectString);
+                    if (searchSetting.rescaleStrings != null)
+                        this._rescaleStrings.AddRange(searchSetting.rescaleStrings);
                     foreach (var searchStirng in searchSetting.searchStirngs)
                     {
                         var addTransforms = UnityUtility.FindGetTransform(this._allObjects, searchStirng, searchSetting.exclusionStrings);
@@ -214,6 +221,8 @@ namespace MovementRecorder.Models
             var saveData = new MovementJson();
             saveData.recordFrameRate = PluginConfig.Instance.recordFrameRate;
             saveData.motionCaptures = this._motionCaptures;
+            saveData.topObjectStrings = this._topObjectStrings;
+            saveData.rescaleStrings = this._rescaleStrings;
             saveData.objectNames = this._objectNames;
             saveData.objectScales = new List<Scale>();
             foreach (var item in this._scales)

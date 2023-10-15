@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Security.Policy;
 
 namespace MovementRecorder.Models
 {
@@ -7,6 +6,8 @@ namespace MovementRecorder.Models
     {
         public int recordFrameRate { get; set; }
         public List<string> motionCaptures { get; set; }
+        public List<string> topObjectStrings { get; set; }
+        public List<string> rescaleStrings { get; set; }
         public List<string> objectNames { get; set; }
         public List<Scale> objectScales { get; set; }
         public List<Record> records { get; set; }

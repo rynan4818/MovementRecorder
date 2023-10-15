@@ -29,7 +29,6 @@ namespace MovementRecorder.Utility
             var resultTransform = new List<Transform>();
             var resultString = new List<string>();
             var searchRegex = new Regex(searchStirng, RegexOptions.Compiled | RegexOptions.CultureInvariant);
-            Plugin.Log.Debug($"{searchStirng}");
             var exclusionRegexs = new List<Regex>();
             if (exclusionStrings != null)
             {
@@ -56,7 +55,6 @@ namespace MovementRecorder.Utility
                         continue;
                     resultTransform.Add(transform);
                     resultString.Add(obj.Item2);
-                    Plugin.Log.Debug($"{obj.Item2}");
                 }
             return (resultTransform, resultString);
         }
