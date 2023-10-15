@@ -1,6 +1,5 @@
 ﻿using MovementRecorder.Configuration;
 using MovementRecorder.HarmonyPatches;
-using System.Diagnostics;
 using UnityEngine;
 using Zenject;
 
@@ -32,6 +31,8 @@ namespace MovementRecorder.Models
         private void Awake()
         {
             this._songStart = false;
+            if (!PluginConfig.Instance.enabled)
+                return;
             StartSongPatch.StartSong += this.OnStartSong;
         }
         /// <summary>
@@ -82,14 +83,18 @@ namespace MovementRecorder.Models
         /// </summary>
         private void OnDestroy()
         {
+            if (!PluginConfig.Instance.enabled)
+                return;
             StartSongPatch.StartSong -= this.OnStartSong;
-            _= this._recordData.SavePlaydataAsync();
+            if (!this._songStart)
+                return;
+            _ = this._recordData.SavePlaydataAsync();
         }
         #endregion
         public void OnStartSong()
         {
             var recordSize = (int)(this._audioTimeSource.songLength / PluginConfig.Instance.recordInterval) + 100;
-            var resetRsult = this._recordData.ResetData(recordSize, this._gameplayCoreSceneSetupData.difficultyBeatmap);
+            var resetRsult = this._recordData.InitializeData(recordSize, this._gameplayCoreSceneSetupData.difficultyBeatmap);
             if (!resetRsult)
                 return;
             Plugin.Log?.Info($"Record Size:{recordSize} Initialize Time:{this._recordData._initializeTime}ms");

@@ -4,6 +4,8 @@ namespace MovementRecorder.Models
 {
     public class MovementJson
     {
+        public float recordInterval { get; set; }
+        public List<string> motionCaptures { get; set; }
         public List<string> objectNames { get; set; }
         public List<Scale> objectScales { get; set; }
         public List<Record> records { get; set; }
@@ -24,5 +26,15 @@ namespace MovementRecorder.Models
         public float x { get; set; }
         public float y { get; set; }
         public float z { get; set; }
+    }
+    public class ResearchJson
+    {
+        public List<string> motionEnabled { get; set; }
+        public List<MotionScales> motionScales { get; set; }
+    }
+    public class MotionScales
+    {
+        public string objectName { get; set; }
+        public string scale { get; set; }
     }
 }

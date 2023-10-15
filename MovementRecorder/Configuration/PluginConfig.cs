@@ -17,20 +17,20 @@ namespace MovementRecorder.Configuration
         {
             new SearchSetting()
             {
-                name = "Custom Avatar",
+                name = "CustomAvatar",
                 searchStirngs = new List<string>()
                 {
-                    @"Avatar Container/SpawnedAvatar\(.+\)(/.+)?"
+                    @"VRGameCore/Avatar Container/SpawnedAvatar[^/]+(/.+)?"
                 },
                 exclusionStrings = new List<string>()
                 {
-                    @"Avatar Container/SpawnedAvatar\(.+\)/Head(/.+)?",
-                    @"Avatar Container/SpawnedAvatar\(.+\)/Pelvis(/.+)?",
-                    @"Avatar Container/SpawnedAvatar\(.+\)/LeftLeg(/.+)?",
-                    @"Avatar Container/SpawnedAvatar\(.+\)/LeftHand(/.+)?",
-                    @"Avatar Container/SpawnedAvatar\(.+\)/RightHand(/.+)?",
-                    @"Avatar Container/SpawnedAvatar\(.+\)/RightLeg(/.+)?",
-                    @"Avatar Container/SpawnedAvatar\(.+\)/Body(/.+)?"
+                    @"VRGameCore/Avatar Container/SpawnedAvatar[^/]+/Head(/.+)?",
+                    @"VRGameCore/Avatar Container/SpawnedAvatar[^/]+/Pelvis(/.+)?",
+                    @"VRGameCore/Avatar Container/SpawnedAvatar[^/]+/LeftLeg(/.+)?",
+                    @"VRGameCore/Avatar Container/SpawnedAvatar[^/]+/LeftHand(/.+)?",
+                    @"VRGameCore/Avatar Container/SpawnedAvatar[^/]+/RightHand(/.+)?",
+                    @"VRGameCore/Avatar Container/SpawnedAvatar[^/]+/RightLeg(/.+)?",
+                    @"VRGameCore/Avatar Container/SpawnedAvatar[^/]+/Body(/.+)?"
                 }
             },
             new SearchSetting()
@@ -38,25 +38,26 @@ namespace MovementRecorder.Configuration
                 name = "SaberFactory",
                 searchStirngs = new List<string>()
                 {
-                    "VRGameCore/LeftHand/LeftSaber/SfSaberModelController(Clone)/SF Saber/LeftSaber(Clone)(/.+)?",
-                    "VRGameCore/RightHand/RightSaber/SfSaberModelController(Clone)/SF Saber/RightSaber(Clone)(/.+)?"
+                    @"VRGameCore/LeftHand/LeftSaber/SfSaberModelController[^/]+/SF Saber/LeftSaber[^/]+(/.+)?",
+                    @"VRGameCore/RightHand/RightSaber/SfSaberModelController[^/]+/SF Saber/RightSaber[^/]+(/.+)?"
                 }
             }
         };
-        public virtual bool enabled { get; set; } = false;
+        public virtual bool enabled { get; set; } = true;
         public virtual bool wipOnly { get; set; } = true;
         [NonNullable]
         [UseConverter(typeof(ListConverter<string>))]
         public virtual List<string> motionCaptures { get; set; } = new List<string>()
         {
-            NoneCapture,
-            NoneCapture,
+            "CustomAvatar",
+            "SaberFactory",
             NoneCapture,
             NoneCapture,
             NoneCapture
         };
         public virtual float recordInterval { get; set; } = 0.033f;
-
+        public virtual bool motionResearch { get; set; } = true;
+        public virtual float researchCheckSongSec { get; set; } = 1f;
         /// <summary>
         /// これは、BSIPAが設定ファイルを読み込むたびに（ファイルの変更が検出されたときを含めて）呼び出されます
         /// </summary>

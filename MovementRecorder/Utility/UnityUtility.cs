@@ -12,32 +12,38 @@ namespace MovementRecorder.Utility
                 return transform.name;
             return GetFullPathName(transform.parent) + "/" + transform.name;
         }
-        public static List<(Transform, string)> GetFullPathNames(Transform[] transforms)
+        public static List<(UnityEngine.Object, string)> GetFullPathNames(UnityEngine.Object[] objects)
         {
-            List<(Transform, string)> result = new List<(Transform, string)>();
-            foreach(var transform in transforms)
-                result.Add((transform , transform.GetFullPathName()));
+            var result = new List<(UnityEngine.Object, string)>();
+            foreach(var obj in objects)
+            {
+                Transform transform = obj as Transform;
+                if (transform == null)
+                    continue;
+                result.Add((obj, transform.GetFullPathName()));
+            }
             return result;
         }
-        public static (List<Transform>, List<string>) FindGetTransform(List<(Transform, string)> allTransforms, string searchStirng, List<string> exclusionStrings = null)
+        public static (List<Transform>, List<string>) FindGetTransform(List<(UnityEngine.Object, string)> allObjects, string searchStirng, List<string> exclusionStrings = null)
         {
-            List<Transform> resultTransform = new List<Transform>();
-            List<string> resultString = new List<string>();
+            var resultTransform = new List<Transform>();
+            var resultString = new List<string>();
             var searchRegex = new Regex(searchStirng, RegexOptions.Compiled | RegexOptions.CultureInvariant);
-            List<Regex> exclusionRegexs = new List<Regex>();
+            Plugin.Log.Debug($"{searchStirng}");
+            var exclusionRegexs = new List<Regex>();
             if (exclusionStrings != null)
             {
                 foreach (var exclusionString in exclusionStrings)
                     exclusionRegexs.Add(new Regex(exclusionString, RegexOptions.Compiled | RegexOptions.CultureInvariant));
             }
-            foreach (var transform in allTransforms)
-                if (searchRegex.IsMatch(transform.Item2))
+            foreach (var obj in allObjects)
+                if (searchRegex.IsMatch(obj.Item2))
                 {
                     var exclusion = false;
                     if (exclusionStrings != null)
                     {
                         foreach (var exclusionRegx in exclusionRegexs)
-                            if (exclusionRegx.IsMatch(transform.Item2))
+                            if (exclusionRegx.IsMatch(obj.Item2))
                             {
                                 exclusion = true;
                                 break;
@@ -45,8 +51,12 @@ namespace MovementRecorder.Utility
                     }
                     if (exclusion)
                         continue;
-                    resultTransform.Add(transform.Item1);
-                    resultString.Add(transform.Item2);
+                    Transform transform = obj.Item1 as Transform;
+                    if (transform == null)
+                        continue;
+                    resultTransform.Add(transform);
+                    resultString.Add(obj.Item2);
+                    Plugin.Log.Debug($"{obj.Item2}");
                 }
             return (resultTransform, resultString);
         }
