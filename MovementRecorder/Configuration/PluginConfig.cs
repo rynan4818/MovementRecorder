@@ -18,21 +18,36 @@ namespace MovementRecorder.Configuration
             new SearchSetting()
             {
                 name = "CustomAvatar",
-                topObjectString = @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/",
-                rescaleStrings = new List<string>()
+                type = "Avatar",
+                topObjectString = new List<string>()
                 {
                     @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/"
                 },
+                rescaleStrings =  @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+$",
                 searchStirngs = new List<string>()
                 {
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/",
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/[^/]+/Armature(/.+)?"
+                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+(/.+)?"
+                },
+                exclusionStrings = new List<string>()
+                {
+                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/Head(/.+)?",
+                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/LeftHand(/.+)?",
+                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/LeftLeg(/.+)?",
+                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/Pelvis(/.+)?",
+                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/RightHand(/.+)?",
+                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/RightLeg(/.+)?",
+                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/Body(/.+)?"
                 }
             },
             new SearchSetting()
             {
                 name = "SaberFactory",
-                topObjectString = @"^.+/VRGameCore/(Left|Right)Hand/(Left|Right)Saber/SfSaberModelController[^/]+/SF Saber/",
+                type = "Saber",
+                topObjectString = new List<string>()
+                {
+                    @"^.+/VRGameCore/LeftHand/LeftSaber/SfSaberModelController[^/]+/SF Saber/",
+                    @"^.+/VRGameCore/RightHand/RightSaber/SfSaberModelController[^/]+/SF Saber/"
+                },
                 searchStirngs = new List<string>()
                 {
                     @"^.+/VRGameCore/LeftHand/LeftSaber/SfSaberModelController[^/]+/SF Saber/LeftSaber[^/]+(/.+)?",
@@ -84,9 +99,10 @@ namespace MovementRecorder.Configuration
     {
         [NonNullable]
         public virtual string name { get; set; }
-        public virtual string topObjectString { get; set; }
+        public virtual string type { get; set; }
         [UseConverter(typeof(ListConverter<string>))]
-        public virtual List<string> rescaleStrings { get; set; }
+        public virtual List<string> topObjectString { get; set; }
+        public virtual string rescaleStrings { get; set; }
         [NonNullable]
         [UseConverter(typeof(ListConverter<string>))]
         public virtual List<string> searchStirngs { get; set; }

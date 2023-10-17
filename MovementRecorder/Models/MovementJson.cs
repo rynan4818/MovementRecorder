@@ -4,13 +4,20 @@ namespace MovementRecorder.Models
 {
     public class MovementJson
     {
+        public List<Setting> Settings { get; set; }
         public int recordFrameRate { get; set; }
-        public List<string> motionCaptures { get; set; }
-        public List<string> topObjectStrings { get; set; }
-        public List<string> rescaleStrings { get; set; }
         public List<string> objectNames { get; set; }
         public List<Scale> objectScales { get; set; }
         public List<Record> records { get; set; }
+    }
+    public class Setting
+    {
+        public virtual string name { get; set; }
+        public virtual string type { get; set; }
+        public virtual List<string> topObjectString { get; set; }
+        public virtual string rescaleStrings { get; set; }
+        public virtual List<string> searchStirngs { get; set; }
+        public virtual List<string> exclusionStrings { get; set; }
     }
     public class Record
     {

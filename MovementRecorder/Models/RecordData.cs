@@ -23,9 +23,7 @@ namespace MovementRecorder.Models
         public List<(Vector3, Quaternion, string)> _allPosRot;
         public List<string> _motionEnabled;
         public List<(Vector3, string)> _motionScales;
-        public List<string> _motionCaptures;
-        public List<string> _topObjectStrings;
-        public List<string> _rescaleStrings;
+        public List<SearchSetting> _searchSettings;
         public Transform[] _transforms;
         public List<string> _objectNames;
         public List<Vector3> _scales;
@@ -49,6 +47,7 @@ namespace MovementRecorder.Models
             this._allPosRot = null;
             this._motionEnabled = null;
             this._motionScales = null;
+            this._searchSettings = null;
             this._levelID = null;
             this._songName = null;
             this._serializedName = null;
@@ -60,9 +59,6 @@ namespace MovementRecorder.Models
         }
         public void ResetCount()
         {
-            this._motionCaptures = new List<string>();
-            this._topObjectStrings = new List<string>();
-            this._rescaleStrings = new List<string>();
             this._wipLevel = false;
             this._initializeTime = 0;
             this._recordCount = 0;
@@ -100,6 +96,7 @@ namespace MovementRecorder.Models
             this._allObjects = UnityUtility.GetFullPathNames(UnityEngine.Object.FindObjectsOfType(typeof(Transform)));
             var transforms = new List<Transform>();
             this._objectNames = new List<string>();
+            this._searchSettings = new List<SearchSetting>();
             foreach (var motionCapture in PluginConfig.Instance.motionCaptures)
             {
                 if (motionCapture == PluginConfig.NoneCapture)
@@ -108,10 +105,7 @@ namespace MovementRecorder.Models
                 {
                     if (searchSetting.name != motionCapture)
                         continue;
-                    this._motionCaptures.Add(motionCapture);
-                    this._topObjectStrings.Add(searchSetting.topObjectString);
-                    if (searchSetting.rescaleStrings != null)
-                        this._rescaleStrings.AddRange(searchSetting.rescaleStrings);
+                    this._searchSettings.Add(searchSetting);
                     foreach (var searchStirng in searchSetting.searchStirngs)
                     {
                         var addTransforms = UnityUtility.FindGetTransform(this._allObjects, searchStirng, searchSetting.exclusionStrings);
@@ -173,12 +167,10 @@ namespace MovementRecorder.Models
                     Transform transform = obj.Item1 as Transform;
                     if (transform == null)
                         continue;
-                    if (PluginConfig.Instance.researchWorldSpace)
-                        if (posRot.Item1 != transform.position || posRot.Item2 != transform.rotation)
+                    if (PluginConfig.Instance.researchWorldSpace && (posRot.Item1 != transform.position || posRot.Item2 != transform.rotation))
                         this._motionEnabled.Add(obj.Item2);
-                    else
-                        if (posRot.Item1 != transform.localPosition || posRot.Item2 != transform.localRotation)
-                            this._motionEnabled.Add(obj.Item2);
+                    else if (!PluginConfig.Instance.researchWorldSpace && (posRot.Item1 != transform.localPosition || posRot.Item2 != transform.localRotation))
+                        this._motionEnabled.Add(obj.Item2);
                 }
             }
         }
@@ -220,9 +212,19 @@ namespace MovementRecorder.Models
             timaer.Start();
             var saveData = new MovementJson();
             saveData.recordFrameRate = PluginConfig.Instance.recordFrameRate;
-            saveData.motionCaptures = this._motionCaptures;
-            saveData.topObjectStrings = this._topObjectStrings;
-            saveData.rescaleStrings = this._rescaleStrings;
+            saveData.Settings = new List<Setting>();
+            foreach(var searchSetting in this._searchSettings)
+            {
+                saveData.Settings.Add(new Setting
+                {
+                    name = searchSetting.name,
+                    type = searchSetting.type,
+                    topObjectString = searchSetting.topObjectString,
+                    rescaleStrings = searchSetting.rescaleStrings,
+                    searchStirngs = searchSetting.searchStirngs,
+                    exclusionStrings = searchSetting.exclusionStrings
+                });
+            }
             saveData.objectNames = this._objectNames;
             saveData.objectScales = new List<Scale>();
             foreach (var item in this._scales)
