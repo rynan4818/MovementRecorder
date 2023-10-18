@@ -14,8 +14,8 @@ namespace MovementRecorder.Models
     {
         public virtual string name { get; set; }
         public virtual string type { get; set; }
-        public virtual List<string> topObjectString { get; set; }
-        public virtual string rescaleStrings { get; set; }
+        public virtual List<string> topObjectStrings { get; set; }
+        public virtual string rescaleString { get; set; }
         public virtual List<string> searchStirngs { get; set; }
         public virtual List<string> exclusionStrings { get; set; }
     }

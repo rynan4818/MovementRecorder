@@ -219,8 +219,8 @@ namespace MovementRecorder.Models
                 {
                     name = searchSetting.name,
                     type = searchSetting.type,
-                    topObjectString = searchSetting.topObjectString,
-                    rescaleStrings = searchSetting.rescaleStrings,
+                    topObjectStrings = searchSetting.topObjectStrings,
+                    rescaleString = searchSetting.rescaleString,
                     searchStirngs = searchSetting.searchStirngs,
                     exclusionStrings = searchSetting.exclusionStrings
                 });

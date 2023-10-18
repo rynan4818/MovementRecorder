@@ -19,11 +19,11 @@ namespace MovementRecorder.Configuration
             {
                 name = "CustomAvatar",
                 type = "Avatar",
-                topObjectString = new List<string>()
+                topObjectStrings = new List<string>()
                 {
                     @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/"
                 },
-                rescaleStrings =  @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+$",
+                rescaleString =  @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+$",
                 searchStirngs = new List<string>()
                 {
                     @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+(/.+)?"
@@ -43,7 +43,7 @@ namespace MovementRecorder.Configuration
             {
                 name = "SaberFactory",
                 type = "Saber",
-                topObjectString = new List<string>()
+                topObjectStrings = new List<string>()
                 {
                     @"^.+/VRGameCore/LeftHand/LeftSaber/SfSaberModelController[^/]+/SF Saber/",
                     @"^.+/VRGameCore/RightHand/RightSaber/SfSaberModelController[^/]+/SF Saber/"
@@ -101,8 +101,8 @@ namespace MovementRecorder.Configuration
         public virtual string name { get; set; }
         public virtual string type { get; set; }
         [UseConverter(typeof(ListConverter<string>))]
-        public virtual List<string> topObjectString { get; set; }
-        public virtual string rescaleStrings { get; set; }
+        public virtual List<string> topObjectStrings { get; set; }
+        public virtual string rescaleString { get; set; }
         [NonNullable]
         [UseConverter(typeof(ListConverter<string>))]
         public virtual List<string> searchStirngs { get; set; }
