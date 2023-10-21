@@ -97,13 +97,13 @@ namespace MovementRecorder.Models
             var transforms = new List<Transform>();
             this._objectNames = new List<string>();
             this._searchSettings = new List<SearchSetting>();
-            foreach (var motionCapture in PluginConfig.Instance.motionCaptures)
+            foreach (var movementName in PluginConfig.Instance.movementNames)
             {
-                if (motionCapture == PluginConfig.NoneCapture)
+                if (movementName == PluginConfig.NoneCapture)
                     continue;
                 foreach (var searchSetting in PluginConfig.Instance.searchSettings)
                 {
-                    if (searchSetting.name != motionCapture)
+                    if (searchSetting.name != movementName)
                         continue;
                     this._searchSettings.Add(searchSetting);
                     foreach (var searchStirng in searchSetting.searchStirngs)

@@ -10,6 +10,9 @@ namespace MovementRecorder.Configuration
     internal class PluginConfig
     {
         public static readonly string NoneCapture = "NONE";
+        public static readonly string AvatarType = "Avatar";
+        public static readonly string SaberType = "Saber";
+        public static readonly string OtherType = "Other";
         public static PluginConfig Instance { get; set; }
 
         [UseConverter(typeof(ListConverter<SearchSetting>))]
@@ -18,7 +21,7 @@ namespace MovementRecorder.Configuration
             new SearchSetting()
             {
                 name = "CustomAvatar",
-                type = "Avatar",
+                type = AvatarType,
                 topObjectStrings = new List<string>()
                 {
                     @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/"
@@ -41,8 +44,36 @@ namespace MovementRecorder.Configuration
             },
             new SearchSetting()
             {
+                name = "VMCAvatar",
+                type = AvatarType,
+                topObjectStrings = new List<string>()
+                {
+                    @"^VMCAvatar/RoomAdjust/VRM/"
+                },
+                rescaleString =  @"^VMCAvatar/RoomAdjust/VRM$",
+                searchStirngs = new List<string>()
+                {
+                    @"^VMCAvatar/RoomAdjust/VRM(/.+)?"
+                }
+            },
+            new SearchSetting()
+            {
+                name = "NalulunaAvatar",
+                type = AvatarType,
+                topObjectStrings = new List<string>()
+                {
+                    @"^NalulunaAvatarsController/PlayerRoot/VRMAvatar/"
+                },
+                rescaleString =  @"^NalulunaAvatarsController/PlayerRoot/VRMAvatar$",
+                searchStirngs = new List<string>()
+                {
+                    @"^NalulunaAvatarsController/PlayerRoot/VRMAvatar(/.+)?"
+                }
+            },
+            new SearchSetting()
+            {
                 name = "SaberFactory",
-                type = "Saber",
+                type = SaberType,
                 topObjectStrings = new List<string>()
                 {
                     @"^.+/VRGameCore/LeftHand/LeftSaber/SfSaberModelController[^/]+/SF Saber/",
@@ -53,21 +84,36 @@ namespace MovementRecorder.Configuration
                     @"^.+/VRGameCore/LeftHand/LeftSaber/SfSaberModelController[^/]+/SF Saber/LeftSaber[^/]+(/.+)?",
                     @"^.+/VRGameCore/RightHand/RightSaber/SfSaberModelController[^/]+/SF Saber/RightSaber[^/]+(/.+)?"
                 }
+            },
+            new SearchSetting()
+            {
+                name = "CustomSabers",
+                type = SaberType,
+                topObjectStrings = new List<string>()
+                {
+                    @"^.+/VRGameCore/LeftHand/LeftSaber/",
+                    @"^.+/VRGameCore/RightHand/RightSaber/"
+                },
+                searchStirngs = new List<string>()
+                {
+                    @"^.+/VRGameCore/LeftHand/LeftSaber/LeftSaber[^/]*(/.+)?",
+                    @"^.+/VRGameCore/RightHand/RightSaber/RightSaber[^/]*(/.+)?"
+                }
             }
         };
         public virtual bool enabled { get; set; } = false;
         public virtual bool wipOnly { get; set; } = true;
         [NonNullable]
         [UseConverter(typeof(ListConverter<string>))]
-        public virtual List<string> motionCaptures { get; set; } = new List<string>()
+        public virtual List<string> movementNames { get; set; } = new List<string>()
         {
-            "CustomAvatar",
-            "SaberFactory",
+            NoneCapture,
+            NoneCapture,
             NoneCapture,
             NoneCapture,
             NoneCapture
         };
-        public virtual int recordFrameRate { get; set; } = 30;
+        public virtual int recordFrameRate { get; set; } = 10;
         public virtual bool motionResearch { get; set; } = false;
         public virtual bool researchWorldSpace { get; set; } = false;
         public virtual float researchCheckSongSec { get; set; } = 1f;

@@ -15,8 +15,12 @@ namespace MovementRecorder.Views
         public static readonly string TabName = "MOVEMENT RECORDER";
         public string ResourceName => string.Join(".", this.GetType().Namespace, this.GetType().Name);
 
-        [UIValue("motionCaptureChoices")]
-        public List<object> motionCaptureChoices { get; set; } = new List<object>();
+        [UIValue("avatarMovementChoices")]
+        public List<object> avatarMovementChoices { get; set; } = new List<object>();
+        [UIValue("saberMovementChoices")]
+        public List<object> saberMovementChoices { get; set; } = new List<object>();
+        [UIValue("otherMovementChoices")]
+        public List<object> otherMovementChoices { get; set; } = new List<object>();
         [UIComponent("recorderLog")]
         public readonly TextMeshProUGUI recorderLog;
 
@@ -28,9 +32,18 @@ namespace MovementRecorder.Views
         public void Initialize()
         {
             GameplaySetup.instance.AddTab(TabName, this.ResourceName, this, MenuType.Solo);
-            this.motionCaptureChoices.Add(PluginConfig.NoneCapture);
+            this.avatarMovementChoices.Add(PluginConfig.NoneCapture);
+            this.saberMovementChoices.Add(PluginConfig.NoneCapture);
+            this.otherMovementChoices.Add(PluginConfig.NoneCapture);
             foreach (var searchSetting in PluginConfig.Instance.searchSettings)
-                this.motionCaptureChoices.Add(searchSetting.name);
+            {
+                if (searchSetting.type == PluginConfig.AvatarType)
+                    this.avatarMovementChoices.Add(searchSetting.name);
+                else if (searchSetting.type == PluginConfig.SaberType)
+                    this.saberMovementChoices.Add(searchSetting.name);
+                else if (searchSetting.type == PluginConfig.OtherType)
+                    this.otherMovementChoices.Add(searchSetting.name);
+            }
             this._recordData.recorderLog += this.OnRecorderLog;
         }
         protected override void OnDestroy()
@@ -57,35 +70,35 @@ namespace MovementRecorder.Views
             get => PluginConfig.Instance.wipOnly;
             set => PluginConfig.Instance.wipOnly = value;
         }
-        [UIValue("motionCapture1")]
-        public string motionCapture1
+        [UIValue("avatarMovement")]
+        public string avatarMovement
         {
-            get => PluginConfig.Instance.motionCaptures[0];
-            set => PluginConfig.Instance.motionCaptures[0] = value;
+            get => PluginConfig.Instance.movementNames[0];
+            set => PluginConfig.Instance.movementNames[0] = value;
         }
-        [UIValue("motionCapture2")]
-        public string motionCapture2
+        [UIValue("saberMovement")]
+        public string saberMovement
         {
-            get => PluginConfig.Instance.motionCaptures[1];
-            set => PluginConfig.Instance.motionCaptures[1] = value;
+            get => PluginConfig.Instance.movementNames[1];
+            set => PluginConfig.Instance.movementNames[1] = value;
         }
-        [UIValue("motionCapture3")]
-        public string motionCapture3
+        [UIValue("otherMovement1")]
+        public string otherMovement1
         {
-            get => PluginConfig.Instance.motionCaptures[2];
-            set => PluginConfig.Instance.motionCaptures[2] = value;
+            get => PluginConfig.Instance.movementNames[2];
+            set => PluginConfig.Instance.movementNames[2] = value;
         }
-        [UIValue("motionCapture4")]
-        public string motionCapture4
+        [UIValue("otherMovement2")]
+        public string otherMovement2
         {
-            get => PluginConfig.Instance.motionCaptures[3];
-            set => PluginConfig.Instance.motionCaptures[3] = value;
+            get => PluginConfig.Instance.movementNames[3];
+            set => PluginConfig.Instance.movementNames[3] = value;
         }
-        [UIValue("motionCapture5")]
-        public string motionCapture5
+        [UIValue("otherMovement3")]
+        public string otherMovement3
         {
-            get => PluginConfig.Instance.motionCaptures[4];
-            set => PluginConfig.Instance.motionCaptures[4] = value;
+            get => PluginConfig.Instance.movementNames[4];
+            set => PluginConfig.Instance.movementNames[4] = value;
         }
         [UIValue("recordFrameRate")]
         public int recordFrameRate
