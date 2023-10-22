@@ -97,6 +97,10 @@ fpsを落としてもCameraMovementで再生時に中間を補間して表示し
 * `searchStirngs` : 記録するオブジェクトのパスを正規表現で指定します。
 * `exclusionStrings` : 除外するオブジェクトのパスを正規表現で指定します。
 
+デフォルト設定ではアバター等の揺れものも含めて全て記録していますが、細かい検索対象や除外設定をすることで記録対象を必要最小限に絞ることもできます。
+
+ChroMapperの設定でSpring Boneの設定を有効にしたり、CustomAvatarの場合はBeatSaberのゲームフォルダから`DynamicBone.dll`をコピーしてPluginフォルダに入れればDynamicBoneも動作します。
+
 ## 調査ファイルについて
 `Movement Research`を有効時にプレイすると`MovementRecorder`フォルダに`Motion_Research_Data.json`が保存されます。
 
