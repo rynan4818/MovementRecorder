@@ -58,7 +58,7 @@ namespace MovementRecorder.Configuration
             },
             new SearchSetting()
             {
-                name = "NalulunaAvatar",
+                name = "NalulunaAvatars",
                 type = AvatarType,
                 topObjectStrings = new List<string>()
                 {
