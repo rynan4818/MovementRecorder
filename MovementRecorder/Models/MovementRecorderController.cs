@@ -13,6 +13,7 @@ namespace MovementRecorder.Models
         private RecordData _recordData;
         public bool _songStart;
         public float _recordInterval;
+        public bool _init;
 
         [Inject]
         private void Constractor(IAudioTimeSource audioTimeSource, GameplayCoreSceneSetupData gameplayCoreSceneSetupData, RecordData recordData)
@@ -20,10 +21,13 @@ namespace MovementRecorder.Models
             this._audioTimeSource = audioTimeSource;
             this._gameplayCoreSceneSetupData = gameplayCoreSceneSetupData;
             this._recordData = recordData;
+            this._init = this._recordData.InitializeCheck();
         }
 
         private void Awake()
         {
+            if (!this._init)
+                return;
             this._songStart = false;
             if (!PluginConfig.Instance.enabled)
                 return;
@@ -35,6 +39,8 @@ namespace MovementRecorder.Models
         }
         private void LateUpdate()
         {
+            if (!this._init)
+                return;
             //LateUpdateで呼ばないとオブジェクト座標が正しく取れないものがある。
             //VRIKの座標更新はLateUpdateのため、念のためDefaultExecutionOrderを30000にする。
             if (!this._songStart)
@@ -46,17 +52,21 @@ namespace MovementRecorder.Models
 
         private void OnDestroy()
         {
+            if (!this._init)
+                return;
             if (!PluginConfig.Instance.enabled)
                 return;
             StartSongPatch.StartSong -= this.OnStartSong;
             if (!this._songStart)
                 return;
-            _ = this._recordData.SavePlaydataAsync();
+            this._recordData.SavePlaydata();
         }
         public void OnStartSong()
         {
+            if (!this._init)
+                return;
             var recordSize = (int)(this._audioTimeSource.songLength / this._recordInterval) + 100;
-            var resetRsult = this._recordData.InitializeData(recordSize, this._gameplayCoreSceneSetupData.difficultyBeatmap);
+            var resetRsult = this._recordData.InitializeData(recordSize, this._gameplayCoreSceneSetupData.difficultyBeatmap, this._audioTimeSource.songTime);
             if (!resetRsult)
                 return;
             Plugin.Log?.Info($"Record Initialize Size:{recordSize} Initialize Time:{this._recordData._initializeTime}ms");

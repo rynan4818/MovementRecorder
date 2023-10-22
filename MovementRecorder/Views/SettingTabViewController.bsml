@@ -2,7 +2,7 @@
 	xsi:schemaLocation='https://monkeymanboy.github.io/BSML-Docs/ https://raw.githubusercontent.com/monkeymanboy/BSML-Docs/gh-pages/BSMLSchema.xsd'>
   <settings-container>
     <checkbox-setting text='Movement Recorder Enabled' value='recorderEnabled' apply-on-change="true"></checkbox-setting>
-    <checkbox-setting text='Wip Map Only' value='wipOnly' apply-on-change="true"></checkbox-setting>
+    <checkbox-setting text='WIP Map Only' value='wipOnly' apply-on-change="true"></checkbox-setting>
     <dropdown-list-setting text="Avatar Movement" choices='avatarMovementChoices' value="avatarMovement" apply-on-change="true"></dropdown-list-setting>
     <dropdown-list-setting text="Saber Movement" choices='saberMovementChoices' value="saberMovement" apply-on-change="true"></dropdown-list-setting>
     <dropdown-list-setting text="Other Movement 1" choices='otherMovementChoices' value="otherMovement1" apply-on-change="true"></dropdown-list-setting>
@@ -10,7 +10,6 @@
     <dropdown-list-setting text="Othre Movement 3" choices='otherMovementChoices' value="otherMovement3" apply-on-change="true"></dropdown-list-setting>
     <increment-setting text="Record Frame Rate (fps)" value="recordFrameRate" increment="1" min="1" max="120" integer-only="true" apply-on-change="true"></increment-setting>
     <checkbox-setting text='Movement Research' value='movementResearch' apply-on-change="true"></checkbox-setting>
-    <checkbox-setting text='Research World Space' value='worldSpace' apply-on-change="true"></checkbox-setting>
     <increment-setting text="Research Check Song Sec (s)" value="researchCheckSongSec" increment="0.1" min="0.1" max="10" apply-on-change="true"></increment-setting>
     <text id='recorderLog' align='TopLeft' font-size='3' size-delta-y='30'></text>
   </settings-container>

@@ -38,8 +38,8 @@ namespace MovementRecorder.Models
     }
     public class ResearchJson
     {
-        public bool worldSpace { get; set; }
-        public List<string> motionEnabled { get; set; }
+        public List<string> motionLocalEnabled { get; set; }
+        public List<string> motionWorldEnabled { get; set; }
         public List<MotionScales> otherOneScales { get; set; }
     }
     public class MotionScales

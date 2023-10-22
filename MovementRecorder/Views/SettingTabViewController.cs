@@ -106,17 +106,11 @@ namespace MovementRecorder.Views
             get => PluginConfig.Instance.recordFrameRate;
             set => PluginConfig.Instance.recordFrameRate = value;
         }
-        [UIValue("motionResearch")]
+        [UIValue("movementResearch")]
         public bool motionResearch
         {
-            get => PluginConfig.Instance.motionResearch;
-            set => PluginConfig.Instance.motionResearch = value;
-        }
-        [UIValue("worldSpace")]
-        public bool worldSpace
-        {
-            get => PluginConfig.Instance.researchWorldSpace;
-            set => PluginConfig.Instance.researchWorldSpace = value;
+            get => PluginConfig.Instance.movementResearch;
+            set => PluginConfig.Instance.movementResearch = value;
         }
         [UIValue("researchCheckSongSec")]
         public float researchCheckSongSec
