@@ -18,10 +18,17 @@
 # インストール方法
 1. [リリースページ](https://github.com/rynan4818/MovementRecorder/releases)から最新のMovementRecorderのリリースをダウンロードします。
 2. ダウンロードしたzipファイルを`Beat Saber`フォルダに解凍して、`Plugin`フォルダに`MovementRecorder.dll`ファイルをコピーします。
-3. 依存modは`SiraUtil`, `BSML`, `SongCOre`の3つです。基本modなので既に入っているはず。
+3. 依存modは`SiraUtil`, `BSML`, `SongCOre`の3つです。基本modなので既に入っているはずです。
 
 # 使い方
 左のMODSタブに`MOVEMENT RECORDER`が追加されます。
+
+![image](https://github.com/rynan4818/MovementRecorder/assets/14249877/01ac34fa-cbbf-4d89-9123-b14da3415550)
+
+![image](https://github.com/rynan4818/MovementRecorder/assets/14249877/df3e7665-c946-42ed-9d2b-7baea3fb3539)
+
+![image](https://github.com/rynan4818/MovementRecorder/assets/14249877/878399cd-cb14-488c-af60-feca88cbc551)
+
 
 * `Movement Recorder Enabled` : 本modの機能を有効にします。
 * `WIP Map Only` : WIP譜面でのみ記録します。
@@ -49,6 +56,11 @@
 
     通常譜面は`UserData/MovementRecorder`に保存されます。
 4. CameraMovementで読み込んで再生します。※使用したアバターやセイバーは全く同じファイルを読み込んで下さい。
+
+## 注意点
+記録ファイルはかなりサイズが大きくなります。アバターやセイバーの構成しているオブジェクトの数や、記録時間、fpsによりますが数十MBから100MB以上になることもあります。なので普段の記録に使用する場合は容量に注意してください。
+
+fpsを落としてもCameraMovementで再生時に中間を補間して表示しますので、表示はなめらか(但し、セイバーなど動きの激しい部分に一部破綻が出てきます）になります。用途に合わせて設定して下さい。
 
 ## 設定ファイルについて
 `UserData/MovementRecorder.json`にmodの設定ファイルが保存されます。
