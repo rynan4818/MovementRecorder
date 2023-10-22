@@ -2,12 +2,14 @@
   "$schema": "https://raw.githubusercontent.com/bsmg/BSIPA-MetadataFileSchema/master/Schema.json",
   "id": "MovementRecorder",
   "name": "MovementRecorder",
-  "author": "",
-  "version": "0.0.1",
-  "description": "",
+  "author": "Rynan",
+  "version": "0.1.0",
+  "description": "Record object movement",
   "gameVersion": "1.20.0",
   "dependsOn": {
     "BSIPA": "^4.2.2",
-    "SiraUtil": "^3.0.5"
+    "SiraUtil": "^3.0.5",
+    "BeatSaberMarkupLanguage": "^1.6.3",
+    "SongCore": "^3.9.5"
   }
 }

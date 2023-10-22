@@ -277,7 +277,6 @@ namespace MovementRecorder.Models
                     Plugin.Log?.Error(ex.ToString());
                 }
             }
-            var a_time = timaer.Elapsed.TotalMilliseconds;
             var saveData = await Task.Run(() =>
             {
                 var save = new MovementJson();
@@ -325,7 +324,6 @@ namespace MovementRecorder.Models
                 }
                 return save;
             }).ConfigureAwait(false);
-            Plugin.Log.Info($"{timaer.Elapsed.TotalMilliseconds - a_time}ms");
             try
             {
                 var serialized = await Task.Run(() => JsonConvert.SerializeObject(saveData, Formatting.None)).ConfigureAwait(false);

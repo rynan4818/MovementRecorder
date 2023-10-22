@@ -24,22 +24,22 @@ namespace MovementRecorder.Configuration
                 type = AvatarType,
                 topObjectStrings = new List<string>()
                 {
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/"
+                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/"
                 },
-                rescaleString =  @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+$",
+                rescaleString =  @"^.+/Avatar Container/SpawnedAvatar[^/]+$",
                 searchStirngs = new List<string>()
                 {
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+(/.+)?"
+                    @"^.+/Avatar Container/SpawnedAvatar[^/]+(/.+)?"
                 },
                 exclusionStrings = new List<string>()
                 {
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/Head(/.+)?",
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/LeftHand(/.+)?",
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/LeftLeg(/.+)?",
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/Pelvis(/.+)?",
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/RightHand(/.+)?",
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/RightLeg(/.+)?",
-                    @"^.+/VRGameCore/Avatar Container/SpawnedAvatar[^/]+/Body(/.+)?"
+                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/Head(/.+)?",
+                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/LeftHand(/.+)?",
+                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/LeftLeg(/.+)?",
+                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/Pelvis(/.+)?",
+                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/RightHand(/.+)?",
+                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/RightLeg(/.+)?",
+                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/Body(/.+)?"
                 }
             },
             new SearchSetting()
@@ -87,7 +87,7 @@ namespace MovementRecorder.Configuration
             },
             new SearchSetting()
             {
-                name = "CustomSabers",
+                name = "CustomSaber",
                 type = SaberType,
                 topObjectStrings = new List<string>()
                 {
@@ -113,7 +113,7 @@ namespace MovementRecorder.Configuration
             NoneCapture,
             NoneCapture
         };
-        public virtual int recordFrameRate { get; set; } = 10;
+        public virtual int recordFrameRate { get; set; } = 30;
         public virtual bool movementResearch { get; set; } = false;
         public virtual float researchCheckSongSec { get; set; } = 1f;
         public virtual double oneObjectSaveTime { get; set; } = 0;
