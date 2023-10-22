@@ -18,7 +18,7 @@
 # インストール方法
 1. [リリースページ](https://github.com/rynan4818/MovementRecorder/releases)から最新のMovementRecorderのリリースをダウンロードします。
 2. ダウンロードしたzipファイルを`Beat Saber`フォルダに解凍して、`Plugin`フォルダに`MovementRecorder.dll`ファイルをコピーします。
-3. 依存modは`SiraUtil`, `BSML`, `SongCOre`の3つです。基本modなので既に入っているはずです。
+3. 依存modは`SiraUtil`, `BSML`, `SongCore`の3つです。基本modなので既に入っているはずです。
 
 # 使い方
 左のMODSタブに`MOVEMENT RECORDER`が追加されます。
