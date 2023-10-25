@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using UnityEngine;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Text;
+using UnityEngine.Profiling;
 
 namespace MovementRecorder.Models
 {
@@ -26,7 +28,9 @@ namespace MovementRecorder.Models
         public Transform[] _transforms;
         public List<string> _objectNames;
         public List<Vector3> _scales;
-        public (float, (Vector3, Quaternion)[])[] _recordData;
+        public float[] _recordData;
+        public float[] _recordSongTime;
+        public List<(float, int)> _recordNullObj;
         public string _levelID;
         public string _songName;
         public string _serializedName;
@@ -59,6 +63,7 @@ namespace MovementRecorder.Models
             this._objectNames = null;
             this._scales = null;
             this._recordData = null;
+            this._recordSongTime = null;
         }
         public void ResetCount()
         {
@@ -142,9 +147,9 @@ namespace MovementRecorder.Models
             }
             this._transforms = transforms.ToArray();
             Plugin.Log?.Info($"Capture Object Count : {this._transforms.Length}");
-            this._recordData = new (float, (Vector3, Quaternion)[])[recordSize];
-            for (int i = 0; i < recordSize; i++)
-                this._recordData[i].Item2 = new (Vector3, Quaternion)[this._transforms.Length];
+            this._recordData = new float[7 * this._transforms.Length * recordSize];  //7 = 3:position(Vector3) + 4:rotation(Quaternion)
+            this._recordSongTime = new float[recordSize];
+            this._recordNullObj = new List<(float, int)>();
             this._scales = new List<Vector3>();
             foreach (var tarnsform in this._transforms)
                 this._scales.Add(tarnsform.localScale);
@@ -197,7 +202,7 @@ namespace MovementRecorder.Models
         {
             if (this._recordCount == 0)
                 return 0;
-            return this._recordData[this._recordCount - 1].Item1;
+            return this._recordSongTime[this._recordCount - 1];
         }
         public void TransformRecord(float songTime, bool timeCount = true)
         {
@@ -206,15 +211,27 @@ namespace MovementRecorder.Models
                 return;
             var timaer = new Stopwatch();
             timaer.Start();
-            this._recordData[this._recordCount].Item1 = songTime;
+            this._recordSongTime[this._recordCount] = songTime;
+            var baseRecordIdx = 7 * this._transforms.Length * this._recordCount;
             for (int i = 0; i < this._transforms.Length; i++)
             {
-                if (this._transforms[i] != null)
-                    this._recordData[this._recordCount].Item2[i] = (this._transforms[i].position, this._transforms[i].rotation);
+                if (this._transforms[i] == null)
+                {
+                    this._recordNullObj.Add((songTime, i));
+                    continue;
+                }
+                var recordIdx = (7 * i) + baseRecordIdx;
+                this._recordData[recordIdx] = this._transforms[i].position.x;
+                this._recordData[recordIdx + 1] = this._transforms[i].position.y;
+                this._recordData[recordIdx + 2] = this._transforms[i].position.z;
+                this._recordData[recordIdx + 3] = this._transforms[i].rotation.x;
+                this._recordData[recordIdx + 4] = this._transforms[i].rotation.y;
+                this._recordData[recordIdx + 5] = this._transforms[i].rotation.z;
+                this._recordData[recordIdx + 6] = this._transforms[i].rotation.w;
             }
             this._recordCount++;
-            if (this._recordData.Length <= this._recordCount)
-                Array.Resize(ref this._recordData, this._recordData.Length + 100);
+            if (this._recordData.Length <= (7 * this._transforms.Length * this._recordCount))
+                Array.Resize(ref this._recordData, this._recordData.Length + (7 * this._transforms.Length * 100));
             if (timeCount)
             {
                 if (this._recordTimeMax < timaer.Elapsed.TotalMilliseconds)
@@ -242,7 +259,7 @@ namespace MovementRecorder.Models
                 savePath = Path.Combine(IPA.Utilities.UnityGame.UserDataPath, MovementRecorderDirectory);
             if (!Directory.Exists(savePath))
                 Directory.CreateDirectory(savePath);
-            var filename = $"{DateTime.Now:yyyyMMddHHmmss}-{this._songName}-{this._difficulty}-{this._serializedName}-{(int)this.GetLastRecordTiem()}s.json";
+            var filename = $"{DateTime.Now:yyyyMMddHHmmss}-{this._songName}-{this._difficulty}-{this._serializedName}-{(int)this.GetLastRecordTiem()}s.mvrec";
             var regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
             var r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
             filename = r.Replace(filename, "_");
@@ -256,6 +273,7 @@ namespace MovementRecorder.Models
                     this._motionScales.Sort((a, b) => a.Item2.CompareTo(b.Item2));
                     var researchData = new ResearchJson
                     {
+                        recordObjectNames = this._objectNames,
                         motionLocalEnabled = this._motionLocalEnabled.Distinct().ToList(),
                         motionWorldEnabled = this._motionWorldEnabled.Distinct().ToList(),
                         otherOneScales = new List<MotionScales>()
@@ -268,7 +286,7 @@ namespace MovementRecorder.Models
                             scale = $"{scale.Item1.x} {scale.Item1.y} {scale.Item1.z}"
                         });
                     }
-                    var serialized = JsonConvert.SerializeObject(researchData, Formatting.Indented);
+                    var serialized = await Task.Run(() => JsonConvert.SerializeObject(researchData, Formatting.Indented)).ConfigureAwait(false);
                     if (!await this.WriteAllTextAsync(Path.Combine(savePath, "Motion_Research_Data.json"), serialized).ConfigureAwait(false))
                         throw new Exception("Failed save Research Data");
                 }
@@ -277,65 +295,54 @@ namespace MovementRecorder.Models
                     Plugin.Log?.Error(ex.ToString());
                 }
             }
-            var saveData = await Task.Run(() =>
+            var meta = new MovementJson
             {
-                var save = new MovementJson();
-                save.recordFrameRate = PluginConfig.Instance.recordFrameRate;
-                save.Settings = new List<Setting>();
-                foreach (var searchSetting in this._searchSettings)
+                objectCount = this._transforms.Length,
+                recordCount = this._recordCount,
+                levelID = this._levelID,
+                songName = this._songName,
+                serializedName = this._serializedName,
+                difficulty = this._difficulty,
+                Settings = new List<Setting>(),
+                recordFrameRate = PluginConfig.Instance.recordFrameRate,
+                objectNames = this._objectNames,
+                objectScales = new List<Scale>()
+            };
+            foreach (var searchSetting in this._searchSettings)
+            {
+                meta.Settings.Add(new Setting
                 {
-                    save.Settings.Add(new Setting
-                    {
-                        name = searchSetting.name,
-                        type = searchSetting.type,
-                        topObjectStrings = searchSetting.topObjectStrings,
-                        rescaleString = searchSetting.rescaleString,
-                        searchStirngs = searchSetting.searchStirngs,
-                        exclusionStrings = searchSetting.exclusionStrings
-                    });
-                }
-                save.objectNames = this._objectNames;
-                save.objectScales = new List<Scale>();
-                foreach (var item in this._scales)
-                    save.objectScales.Add(new Scale() { x = item.x, y = item.y, z = item.z });
-                save.records = new List<Record>();
-                for (int i = 0; i < this._recordCount; i++)
-                {
-                    var record = new Record();
-                    record.songTIme = this._recordData[i].Item1;
-                    record.posX = new List<float>();
-                    record.posY = new List<float>();
-                    record.posZ = new List<float>();
-                    record.rotX = new List<float>();
-                    record.rotY = new List<float>();
-                    record.rotZ = new List<float>();
-                    record.rotW = new List<float>();
-                    foreach (var item in this._recordData[i].Item2)
-                    {
-                        record.posX.Add(item.Item1.x);
-                        record.posY.Add(item.Item1.y);
-                        record.posZ.Add(item.Item1.z);
-                        record.rotX.Add(item.Item2.x);
-                        record.rotY.Add(item.Item2.y);
-                        record.rotZ.Add(item.Item2.z);
-                        record.rotW.Add(item.Item2.w);
-                    }
-                    save.records.Add(record);
-                }
-                return save;
-            }).ConfigureAwait(false);
+                    name = searchSetting.name,
+                    type = searchSetting.type,
+                    topObjectStrings = searchSetting.topObjectStrings,
+                    rescaleString = searchSetting.rescaleString,
+                    searchStirngs = searchSetting.searchStirngs,
+                    exclusionStrings = searchSetting.exclusionStrings
+                });
+            }
+            foreach (var item in this._scales)
+                meta.objectScales.Add(new Scale() { x = item.x, y = item.y, z = item.z });
             try
             {
-                var serialized = await Task.Run(() => JsonConvert.SerializeObject(saveData, Formatting.None)).ConfigureAwait(false);
-                if (!await this.WriteAllTextAsync(Path.Combine(savePath, filename), serialized).ConfigureAwait(false))
-                    throw new Exception("Failed save Movement Data");
-                var fi = new FileInfo(Path.Combine(savePath, filename));
-                saveFileSize = fi.Length;
+                var metaSerialized = await Task.Run(() => JsonConvert.SerializeObject(meta, Formatting.None)).ConfigureAwait(false);
+                await Task.Run(() =>
+                {
+                    using (var writer = new BinaryWriter(File.Open(Path.Combine(savePath, filename), FileMode.Create), Encoding.UTF8))
+                    {
+                        writer.Write(metaSerialized);
+                        for (var i = 0; i < this._recordCount; i++)
+                            writer.Write(this._recordSongTime[i]);
+                        for (var i = 0; i < (7 * this._transforms.Length * this._recordCount); i++)
+                            writer.Write(this._recordData[i]);
+                    }
+                }).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Plugin.Log?.Error(ex.ToString());
             }
+            var fi = new FileInfo(Path.Combine(savePath, filename));
+            saveFileSize = fi.Length;
             this._saveTime = timaer.Elapsed.TotalMilliseconds;
             PluginConfig.Instance.oneObjectSaveTime = this._saveTime / (this._transforms.Length * this._recordCount);
             if (!this._saveTaskCheck)
