@@ -14,21 +14,27 @@ namespace MovementRecorder.Models
         public int recordFrameRate { get; set; }
         public List<string> objectNames { get; set; }
         public List<Scale> objectScales { get; set; }
+        public List<NUllObject> recordNullObjects { get; set; }
     }
     public class Setting
     {
-        public virtual string name { get; set; }
-        public virtual string type { get; set; }
-        public virtual List<string> topObjectStrings { get; set; }
-        public virtual string rescaleString { get; set; }
-        public virtual List<string> searchStirngs { get; set; }
-        public virtual List<string> exclusionStrings { get; set; }
+        public string name { get; set; }
+        public string type { get; set; }
+        public List<string> topObjectStrings { get; set; }
+        public string rescaleString { get; set; }
+        public List<string> searchStirngs { get; set; }
+        public List<string> exclusionStrings { get; set; }
     }
     public class Scale
     {
         public float x { get; set; }
         public float y { get; set; }
         public float z { get; set; }
+    }
+    public class NUllObject
+    {
+        public float songTime { get; set; }
+        public int objIndex { get; set; }
     }
     public class ResearchJson
     {

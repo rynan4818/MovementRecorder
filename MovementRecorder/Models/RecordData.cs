@@ -11,7 +11,6 @@ using UnityEngine;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Text;
-using UnityEngine.Profiling;
 
 namespace MovementRecorder.Models
 {
@@ -28,9 +27,9 @@ namespace MovementRecorder.Models
         public Transform[] _transforms;
         public List<string> _objectNames;
         public List<Vector3> _scales;
-        public float[] _recordData;
+        public (Vector3, Quaternion)[][] _recordData;
         public float[] _recordSongTime;
-        public List<(float, int)> _recordNullObj;
+        public List<(float, int)> _recordNullObjects;
         public string _levelID;
         public string _songName;
         public string _serializedName;
@@ -64,6 +63,7 @@ namespace MovementRecorder.Models
             this._scales = null;
             this._recordData = null;
             this._recordSongTime = null;
+            this._recordNullObjects = null;
         }
         public void ResetCount()
         {
@@ -147,9 +147,11 @@ namespace MovementRecorder.Models
             }
             this._transforms = transforms.ToArray();
             Plugin.Log?.Info($"Capture Object Count : {this._transforms.Length}");
-            this._recordData = new float[7 * this._transforms.Length * recordSize];  //7 = 3:position(Vector3) + 4:rotation(Quaternion)
+            this._recordData = new (Vector3, Quaternion)[recordSize][];
+            for (int i = 0; i < recordSize; i++)
+                this._recordData[i] = new (Vector3, Quaternion)[this._transforms.Length];            
             this._recordSongTime = new float[recordSize];
-            this._recordNullObj = new List<(float, int)>();
+            this._recordNullObjects = new List<(float, int)>();
             this._scales = new List<Vector3>();
             foreach (var tarnsform in this._transforms)
                 this._scales.Add(tarnsform.localScale);
@@ -212,26 +214,23 @@ namespace MovementRecorder.Models
             var timaer = new Stopwatch();
             timaer.Start();
             this._recordSongTime[this._recordCount] = songTime;
-            var baseRecordIdx = 7 * this._transforms.Length * this._recordCount;
             for (int i = 0; i < this._transforms.Length; i++)
             {
                 if (this._transforms[i] == null)
                 {
-                    this._recordNullObj.Add((songTime, i));
+                    this._recordNullObjects.Add((songTime, i));
+                    this._recordData[this._recordCount][i] = (Vector3.zero, Quaternion.identity);
                     continue;
                 }
-                var recordIdx = (7 * i) + baseRecordIdx;
-                this._recordData[recordIdx] = this._transforms[i].position.x;
-                this._recordData[recordIdx + 1] = this._transforms[i].position.y;
-                this._recordData[recordIdx + 2] = this._transforms[i].position.z;
-                this._recordData[recordIdx + 3] = this._transforms[i].rotation.x;
-                this._recordData[recordIdx + 4] = this._transforms[i].rotation.y;
-                this._recordData[recordIdx + 5] = this._transforms[i].rotation.z;
-                this._recordData[recordIdx + 6] = this._transforms[i].rotation.w;
+                    this._recordData[this._recordCount][i] = (this._transforms[i].position, this._transforms[i].rotation);
             }
             this._recordCount++;
-            if (this._recordData.Length <= (7 * this._transforms.Length * this._recordCount))
-                Array.Resize(ref this._recordData, this._recordData.Length + (7 * this._transforms.Length * 100));
+            if (this._recordData.Length <= this._recordCount)
+            {
+                Array.Resize(ref this._recordData, this._recordData.Length + 100);
+                for (int i = this._recordData.Length - 100; i < this._recordData.Length; i++)
+                    this._recordData[i] = new (Vector3, Quaternion)[this._transforms.Length];            
+            }
             if (timeCount)
             {
                 if (this._recordTimeMax < timaer.Elapsed.TotalMilliseconds)
@@ -308,6 +307,14 @@ namespace MovementRecorder.Models
                 objectNames = this._objectNames,
                 objectScales = new List<Scale>()
             };
+            foreach (var recordNullObject in this._recordNullObjects)
+            {
+                meta.recordNullObjects.Add(new NUllObject
+                {
+                    songTime = recordNullObject.Item1,
+                    objIndex = recordNullObject.Item2
+                });
+            }
             foreach (var searchSetting in this._searchSettings)
             {
                 meta.Settings.Add(new Setting
@@ -331,9 +338,19 @@ namespace MovementRecorder.Models
                     {
                         writer.Write(metaSerialized);
                         for (var i = 0; i < this._recordCount; i++)
+                        {
                             writer.Write(this._recordSongTime[i]);
-                        for (var i = 0; i < (7 * this._transforms.Length * this._recordCount); i++)
-                            writer.Write(this._recordData[i]);
+                            for (int j = 0; j < this._transforms.Length; j++)
+                            {
+                                writer.Write(this._recordData[i][j].Item1.x);
+                                writer.Write(this._recordData[i][j].Item1.y);
+                                writer.Write(this._recordData[i][j].Item1.z);
+                                writer.Write(this._recordData[i][j].Item2.x);
+                                writer.Write(this._recordData[i][j].Item2.y);
+                                writer.Write(this._recordData[i][j].Item2.z);
+                                writer.Write(this._recordData[i][j].Item2.w);
+                            }
+                        }
                     }
                 }).ConfigureAwait(false);
             }
