@@ -147,6 +147,7 @@ meta_json.recordCount.loop {
 ```
 * string ・・・ 可変 [BinaryWriter.Write(String)※]
 * float  ・・・ 4Byte
+* objectCountの並びはobjectNamesと一致
 
 meta_jsonはC#の場合は、BinaryReader.ReadString()で読み取れますので、JSONパースしてrecordCountとobjectCountを取り出します。
 recordCountとobjectCountでループを回しながらBinaryReader.ReadSingle()でSongTime,position,rotationを読み取って下さい。
