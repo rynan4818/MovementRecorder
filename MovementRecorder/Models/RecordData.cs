@@ -27,8 +27,7 @@ namespace MovementRecorder.Models
         public Transform[] _transforms;
         public List<string> _objectNames;
         public List<Vector3> _scales;
-        public (Vector3, Quaternion)[][] _recordData;
-        public float[] _recordSongTime;
+        public (float, (Vector3, Quaternion)[])[] _recordData;
         public List<(float, int)> _recordNullObjects;
         public string _levelID;
         public string _songName;
@@ -62,7 +61,6 @@ namespace MovementRecorder.Models
             this._objectNames = null;
             this._scales = null;
             this._recordData = null;
-            this._recordSongTime = null;
             this._recordNullObjects = null;
         }
         public void ResetCount()
@@ -147,10 +145,9 @@ namespace MovementRecorder.Models
             }
             this._transforms = transforms.ToArray();
             Plugin.Log?.Info($"Capture Object Count : {this._transforms.Length}");
-            this._recordData = new (Vector3, Quaternion)[recordSize][];
+            this._recordData = new (float, (Vector3, Quaternion)[])[recordSize];
             for (int i = 0; i < recordSize; i++)
-                this._recordData[i] = new (Vector3, Quaternion)[this._transforms.Length];            
-            this._recordSongTime = new float[recordSize];
+                this._recordData[i].Item2 = new (Vector3, Quaternion)[this._transforms.Length];
             this._recordNullObjects = new List<(float, int)>();
             this._scales = new List<Vector3>();
             foreach (var tarnsform in this._transforms)
@@ -204,7 +201,7 @@ namespace MovementRecorder.Models
         {
             if (this._recordCount == 0)
                 return 0;
-            return this._recordSongTime[this._recordCount - 1];
+            return this._recordData[this._recordCount - 1].Item1;
         }
         public void TransformRecord(float songTime, bool timeCount = true)
         {
@@ -213,23 +210,23 @@ namespace MovementRecorder.Models
                 return;
             var timaer = new Stopwatch();
             timaer.Start();
-            this._recordSongTime[this._recordCount] = songTime;
+            this._recordData[this._recordCount].Item1 = songTime;
             for (int i = 0; i < this._transforms.Length; i++)
             {
                 if (this._transforms[i] == null)
                 {
                     this._recordNullObjects.Add((songTime, i));
-                    this._recordData[this._recordCount][i] = (Vector3.zero, Quaternion.identity);
+                    this._recordData[this._recordCount].Item2[i] = (Vector3.zero, Quaternion.identity);
                     continue;
                 }
-                    this._recordData[this._recordCount][i] = (this._transforms[i].position, this._transforms[i].rotation);
+                    this._recordData[this._recordCount].Item2[i] = (this._transforms[i].position, this._transforms[i].rotation);
             }
             this._recordCount++;
             if (this._recordData.Length <= this._recordCount)
             {
-                Array.Resize(ref this._recordData, this._recordData.Length + 100);
-                for (int i = this._recordData.Length - 100; i < this._recordData.Length; i++)
-                    this._recordData[i] = new (Vector3, Quaternion)[this._transforms.Length];            
+                Array.Resize(ref this._recordData, this._recordData.Length + 1000);
+                for (int i = this._recordData.Length - 1000; i < this._recordData.Length; i++)
+                    this._recordData[i].Item2 = new (Vector3, Quaternion)[this._transforms.Length];
             }
             if (timeCount)
             {
@@ -339,16 +336,16 @@ namespace MovementRecorder.Models
                         writer.Write(metaSerialized);
                         for (var i = 0; i < this._recordCount; i++)
                         {
-                            writer.Write(this._recordSongTime[i]);
-                            for (int j = 0; j < this._transforms.Length; j++)
+                            writer.Write(this._recordData[i].Item1);
+                            foreach (var item in this._recordData[i].Item2)
                             {
-                                writer.Write(this._recordData[i][j].Item1.x);
-                                writer.Write(this._recordData[i][j].Item1.y);
-                                writer.Write(this._recordData[i][j].Item1.z);
-                                writer.Write(this._recordData[i][j].Item2.x);
-                                writer.Write(this._recordData[i][j].Item2.y);
-                                writer.Write(this._recordData[i][j].Item2.z);
-                                writer.Write(this._recordData[i][j].Item2.w);
+                                writer.Write(item.Item1.x);
+                                writer.Write(item.Item1.y);
+                                writer.Write(item.Item1.z);
+                                writer.Write(item.Item2.x);
+                                writer.Write(item.Item2.y);
+                                writer.Write(item.Item2.z);
+                                writer.Write(item.Item2.w);
                             }
                         }
                     }
