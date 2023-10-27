@@ -164,6 +164,36 @@ meta_json.recordCount.loop {
 * float  ・・・ 4Byte [BinaryWriter.Write(Single)](https://learn.microsoft.com/ja-jp/dotnet/api/system.io.binarywriter.write?view=net-7.0#system-io-binarywriter-write(system-single))
 * meta_json.objectCountの並びはmeta_json.objectNamesと一致
 
+meta_json
+```json
+{
+  "objectCount":記録オブジェクト数
+  "recordCount":記録レコード数
+  "levelID":"譜面のlevelID"
+  "songName":"譜面の曲名"
+  "serializedName":"譜面のモード"
+  "difficulty":"譜面の難易度"
+  "Settings":[記録対象の設定リスト
+    {
+      "name":"設定名"
+      "type":"設定タイプ"
+      "topObjectStrings":[オブジェクトのパスの不要な先頭部分のリスト]
+      "rescaleString":"オブジェクトのスケールを設定しているパス"
+      "searchStirngs":[記録するオブジェクトのパスのリスト]
+      "exclusionStrings":[除外するオブジェクトのパスのリスト]
+    }
+  ]
+  "recordFrameRate":記録フレームレート
+  "objectNames":[記録対象オブジェクトのパスのリスト]
+  "objectScales":[記録対象オブジェクトのスケールのリスト]
+  "recordNullObjects":[記録対象オブジェクトが途中でNULLになったリスト
+    {
+    "songTime":曲時間
+    "objIndex":対象オブジェクトのインデックス
+    }
+  ]
+}
+```
 meta_jsonはC#の場合は、BinaryReader.ReadString()で読み取れますので、JSONパースしてrecordCountとobjectCountを取り出します。
 recordCountとobjectCountでループを回しながらBinaryReader.ReadSingle()でSongTime,position,rotationを読み取って下さい。
 
