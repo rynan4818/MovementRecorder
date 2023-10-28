@@ -27,7 +27,7 @@ namespace MovementRecorder.Models
         public Transform[] _transforms;
         public List<string> _objectNames;
         public List<Vector3> _scales;
-        public (float, (Vector3, Quaternion)[])[] _recordData;
+        public (float, (Vector3, Quaternion)[])[] _recordData = null;
         public List<(float, int)> _recordNullObjects;
         public string _levelID;
         public string _songName;
@@ -35,7 +35,7 @@ namespace MovementRecorder.Models
         public string _difficulty;
         public float _startSongTime;
         public bool _wipLevel;
-        public int _recordSize;
+        public int _transformSize = 0;
         public int _recordCount;
         public double _initializeTime;
         public double _recordTimeMax;
@@ -44,6 +44,7 @@ namespace MovementRecorder.Models
         public double _saveTime;
         public Task _saveTask;
         public bool _saveTaskCheck;
+        public int _recordArrayResize;
 
         public void ResetData()
         {
@@ -60,8 +61,12 @@ namespace MovementRecorder.Models
             this._transforms = null;
             this._objectNames = null;
             this._scales = null;
-            this._recordData = null;
             this._recordNullObjects = null;
+        }
+        public void ResetRecord()
+        {
+            this._recordData = null;
+            this._transformSize = 0;
         }
         public void ResetCount()
         {
@@ -69,11 +74,11 @@ namespace MovementRecorder.Models
             this._startSongTime = 0;
             this._initializeTime = 0;
             this._recordCount = 0;
-            this._recordSize = 0;
             this._recordTimeMax = 0;
             this._recordTimeMin = 0;
             this._recordTimeTotal = 0;
             this._saveTime = 0;
+            this._recordArrayResize = 0;
         }
         public bool InitializeCheck()
         {
@@ -96,10 +101,11 @@ namespace MovementRecorder.Models
         {
             var timaer = new Stopwatch();
             timaer.Start();
+            if (!PluginConfig.Instance.notDisposeMemory)
+                this.ResetRecord();
             this.ResetData();
             this.ResetCount();
             this._startSongTime = songTime;
-            this._recordSize = recordSize;
             this._levelID = difficultyBeatmap.level.levelID;
             this._songName = difficultyBeatmap.level.songName;
             this._serializedName = difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
@@ -145,9 +151,23 @@ namespace MovementRecorder.Models
             }
             this._transforms = transforms.ToArray();
             Plugin.Log?.Info($"Capture Object Count : {this._transforms.Length}");
-            this._recordData = new (float, (Vector3, Quaternion)[])[recordSize];
-            for (int i = 0; i < recordSize; i++)
-                this._recordData[i].Item2 = new (Vector3, Quaternion)[this._transforms.Length];
+            if (this._recordData == null || this._transformSize != this._transforms.Length)
+            {
+                this._transformSize = this._transforms.Length;
+                this._recordData = new (float, (Vector3, Quaternion)[])[recordSize];
+                for (int i = 0; i < recordSize; i++)
+                    this._recordData[i].Item2 = new (Vector3, Quaternion)[this._transforms.Length];
+            }
+            else
+            {
+                if (this._recordData.Length < recordSize)
+                {
+                    var beforeChange = this._recordData.Length;
+                    Array.Resize(ref this._recordData, recordSize);
+                    for (int i = beforeChange; i < this._recordData.Length; i++)
+                        this._recordData[i].Item2 = new (Vector3, Quaternion)[this._transforms.Length];
+                }
+            }
             this._recordNullObjects = new List<(float, int)>();
             this._scales = new List<Vector3>();
             foreach (var tarnsform in this._transforms)
@@ -222,8 +242,9 @@ namespace MovementRecorder.Models
                     this._recordData[this._recordCount].Item2[i] = (this._transforms[i].position, this._transforms[i].rotation);
             }
             this._recordCount++;
-            if (this._recordData.Length <= this._recordCount)
+            if (this._recordData.Length <= this._recordCount) //起きないはずだけど例外防止で念のため
             {
+                this._recordArrayResize++;
                 Array.Resize(ref this._recordData, this._recordData.Length + 1000);
                 for (int i = this._recordData.Length - 1000; i < this._recordData.Length; i++)
                     this._recordData[i].Item2 = new (Vector3, Quaternion)[this._transforms.Length];
@@ -362,12 +383,20 @@ namespace MovementRecorder.Models
             if (!this._saveTaskCheck)
                 return;
             Plugin.Log?.Info($"Save Time:{this._saveTime}ms  Record Count:{this._recordCount} One Time Record Ave:{this._recordTimeTotal / this._recordCount}ms Max:{this._recordTimeMax}ms Min:{this._recordTimeMin}ms");
-            var log = $"=== Movement Recorder Log ===\nInitialize Time:{this._initializeTime}ms \t\tCapture Object Count:{this._transforms.Length}\nRecord Initialize Size:{this._recordSize} \t" +
-                $"Record Count:{this._recordCount}\nLast Song Time:{this.GetLastRecordTiem()}s\tSave File Time:{this._saveTime}ms\n" +
-                $"Save File Size:{Math.Floor(saveFileSize / 10485.76d) / 100}Mbyte\nOne Movement Recording Time\n" +
-                $"Ave:{Math.Floor(this._recordTimeTotal / this._recordCount * 1000) / 1000}ms \tMax:{this._recordTimeMax}ms \tMin:{this._recordTimeMin}ms";
+            var warningMessage = "";
+            if (this._recordArrayResize > 0)
+                warningMessage = $"!Warning! Array size extended during play due to unexpected circumstances:{this._recordArrayResize} Count\n";
+            var log = $"=== Movement Recorder Log ===\n" +
+                $"Initialize Process Time:{this._initializeTime}ms \t\tCapture Object Count:{this._transforms.Length}\n" +
+                $"Record Array Size:{this._recordData.Length}\t\tAllocated Memory Size:{Math.Floor(_transforms.Length * (long)this._recordData.Length * 28l / 10485.76d) / 100}MByte\n" + warningMessage +
+                $"Record Count:{this._recordCount}\t\tLast Song Time:{this.GetLastRecordTiem()}s\n" +
+                $"Save Process Time:{this._saveTime}ms\tSave File Size:{Math.Floor(saveFileSize / 10485.76d) / 100}Mbyte\n" +
+                $"One Movement Recording Time\n" +
+                $"Ave:{Math.Floor(this._recordTimeTotal / this._recordCount * 10000) / 10000}ms \tMax:{this._recordTimeMax}ms \tMin:{this._recordTimeMin}ms";
             this.recorderLog?.Invoke(log);
             this.ResetData();
+            if (!PluginConfig.Instance.notDisposeMemory)
+                this.ResetRecord();
             timaer.Stop();
         }
         public async Task<bool> WriteAllTextAsync(string path, string contents)

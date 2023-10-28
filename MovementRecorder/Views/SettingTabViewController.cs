@@ -62,7 +62,11 @@ namespace MovementRecorder.Views
         public bool recorderEnabled
         {
             get => PluginConfig.Instance.enabled;
-            set => PluginConfig.Instance.enabled = value;
+            set
+            {
+                PluginConfig.Instance.enabled = value;
+                this._recordData.ResetRecord();
+            }
         }
         [UIValue("wipOnly")]
         public bool wipOnly
@@ -74,37 +78,61 @@ namespace MovementRecorder.Views
         public string avatarMovement
         {
             get => PluginConfig.Instance.movementNames[0];
-            set => PluginConfig.Instance.movementNames[0] = value;
+            set
+            {
+                PluginConfig.Instance.movementNames[0] = value;
+                this._recordData.ResetRecord();
+            }
         }
         [UIValue("saberMovement")]
         public string saberMovement
         {
             get => PluginConfig.Instance.movementNames[1];
-            set => PluginConfig.Instance.movementNames[1] = value;
+            set
+            {
+                PluginConfig.Instance.movementNames[1] = value;
+                this._recordData.ResetRecord();
+            }
         }
         [UIValue("otherMovement1")]
         public string otherMovement1
         {
             get => PluginConfig.Instance.movementNames[2];
-            set => PluginConfig.Instance.movementNames[2] = value;
+            set
+            {
+                PluginConfig.Instance.movementNames[2] = value;
+                this._recordData.ResetRecord();
+            }
         }
         [UIValue("otherMovement2")]
         public string otherMovement2
         {
             get => PluginConfig.Instance.movementNames[3];
-            set => PluginConfig.Instance.movementNames[3] = value;
+            set
+            {
+                PluginConfig.Instance.movementNames[3] = value;
+                this._recordData.ResetRecord();
+            }
         }
         [UIValue("otherMovement3")]
         public string otherMovement3
         {
             get => PluginConfig.Instance.movementNames[4];
-            set => PluginConfig.Instance.movementNames[4] = value;
+            set
+            {
+                PluginConfig.Instance.movementNames[4] = value;
+                this._recordData.ResetRecord();
+            }
         }
         [UIValue("recordFrameRate")]
         public int recordFrameRate
         {
             get => PluginConfig.Instance.recordFrameRate;
-            set => PluginConfig.Instance.recordFrameRate = value;
+            set
+            {
+                PluginConfig.Instance.recordFrameRate = value;
+                this._recordData.ResetRecord();
+            }
         }
         [UIValue("movementResearch")]
         public bool motionResearch
@@ -117,6 +145,26 @@ namespace MovementRecorder.Views
         {
             get => PluginConfig.Instance.researchCheckSongSec;
             set => PluginConfig.Instance.researchCheckSongSec = value;
+        }
+        [UIValue("notDisposeMemory")]
+        public bool notDisposeMemory
+        {
+            get => PluginConfig.Instance.notDisposeMemory;
+            set
+            {
+                PluginConfig.Instance.notDisposeMemory = value;
+                this._recordData.ResetRecord();
+            }
+        }
+        [UIValue("minMemoryAllocation")]
+        public int minMemoryAllocation
+        {
+            get => PluginConfig.Instance.minMemoryAllocation;
+            set
+            {
+                PluginConfig.Instance.minMemoryAllocation = value;
+                this._recordData.ResetRecord();
+            }
         }
         public void OnRecorderLog(string log)
         {

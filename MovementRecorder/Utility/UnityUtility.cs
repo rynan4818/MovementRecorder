@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -6,21 +7,24 @@ namespace MovementRecorder.Utility
 {
     public static class UnityUtility
     {
-        public static string GetFullPathName(this Transform transform)
+        public static StringBuilder GetFullPathName(Transform transform, StringBuilder builder)
         {
             if (transform.parent == null)
-                return transform.name;
-            return GetFullPathName(transform.parent) + "/" + transform.name;
+                return builder.Append(transform.name);
+            return GetFullPathName(transform.parent, builder).Append($"/{transform.name}");
         }
         public static List<(UnityEngine.Object, string)> GetFullPathNames(UnityEngine.Object[] objects)
         {
             var result = new List<(UnityEngine.Object, string)>();
-            foreach(var obj in objects)
+            var builder = new StringBuilder(1000);
+            foreach (var obj in objects)
             {
                 Transform transform = obj as Transform;
                 if (transform == null)
                     continue;
-                result.Add((obj, transform.GetFullPathName()));
+                builder = GetFullPathName(transform, builder);
+                result.Add((obj, builder.ToString()));
+                builder.Clear();
             }
             return result;
         }

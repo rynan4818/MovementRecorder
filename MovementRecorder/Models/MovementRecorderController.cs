@@ -65,7 +65,11 @@ namespace MovementRecorder.Models
         {
             if (!this._init)
                 return;
-            var recordSize = (int)(this._audioTimeSource.songLength / this._recordInterval) + 100;
+            var songLength = this._audioTimeSource.songLength;
+            var minLength = (float)(PluginConfig.Instance.minMemoryAllocation * 60);
+            if (PluginConfig.Instance.notDisposeMemory && songLength < minLength)
+                songLength = minLength;
+            var recordSize = (int)(songLength / this._recordInterval) + 100;
             var resetRsult = this._recordData.InitializeData(recordSize, this._gameplayCoreSceneSetupData.difficultyBeatmap, this._audioTimeSource.songTime);
             if (!resetRsult)
                 return;

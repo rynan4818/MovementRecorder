@@ -9,8 +9,10 @@
     <dropdown-list-setting text="Other Movement 2" choices='otherMovementChoices' value="otherMovement2" apply-on-change="true"></dropdown-list-setting>
     <dropdown-list-setting text="Othre Movement 3" choices='otherMovementChoices' value="otherMovement3" apply-on-change="true"></dropdown-list-setting>
     <increment-setting text="Record Frame Rate (fps)" value="recordFrameRate" increment="1" min="1" max="120" integer-only="true" apply-on-change="true"></increment-setting>
-    <checkbox-setting text='Movement Research' value='movementResearch' apply-on-change="true"></checkbox-setting>
-    <increment-setting text="Research Check Song Sec (s)" value="researchCheckSongSec" increment="0.1" min="0.1" max="10" apply-on-change="true"></increment-setting>
+    <checkbox-setting text='Movement Research' value='movementResearch' hover-hint='Examines objects in motion and outputs a report' apply-on-change="true"></checkbox-setting>
+    <increment-setting text="Research Check Song Sec (s)" value="researchCheckSongSec" hover-hint="Elapsed time since the start of conducting the research" increment="0.1" min="0.1" max="10" apply-on-change="true"></increment-setting>
+    <checkbox-setting text='Not Dispose Memory' value='notDisposeMemory' hover-hint='For the same recording conditions, memory is not discarded but diverted' apply-on-change="true"></checkbox-setting>
+    <increment-setting text="Min Memory Allocation Time (min)" value="minMemoryAllocation" hover-hint="Minimum time to allocate memory" increment="1" min="1" max="60" integer-only="true" apply-on-change="true"></increment-setting>
     <text id='recorderLog' align='TopLeft' font-size='3' size-delta-y='30'></text>
   </settings-container>
 </bg>
