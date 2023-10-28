@@ -388,7 +388,7 @@ namespace MovementRecorder.Models
                 warningMessage = $"!Warning! Array size extended during play due to unexpected circumstances:{this._recordArrayResize} Count\n";
             var log = $"=== Movement Recorder Log ===\n" +
                 $"Initialize Process Time:{this._initializeTime}ms \t\tCapture Object Count:{this._transforms.Length}\n" +
-                $"Record Array Size:{this._recordData.Length}\t\tAllocated Memory Size:{Math.Floor(_transforms.Length * (long)this._recordData.Length * 28l / 10485.76d) / 100}MByte\n" + warningMessage +
+                $"Record Array Size:{this._recordData.Length}\t\tAllocated Memory Size:{Math.Floor(_transforms.Length * (long)this._recordData.Length * 28L / 10485.76d) / 100}MByte\n" + warningMessage +
                 $"Record Count:{this._recordCount}\t\tLast Song Time:{this.GetLastRecordTiem()}s\n" +
                 $"Save Process Time:{this._saveTime}ms\tSave File Size:{Math.Floor(saveFileSize / 10485.76d) / 100}Mbyte\n" +
                 $"One Movement Recording Time\n" +
