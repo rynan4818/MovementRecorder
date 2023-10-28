@@ -3,7 +3,7 @@
   "id": "MovementRecorder",
   "name": "MovementRecorder",
   "author": "Rynan",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Record object movement",
   "gameVersion": "1.20.0",
   "dependsOn": {
