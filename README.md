@@ -38,15 +38,20 @@
 * `Record Frame Rate(fps)` : 動きを記録する間隔を設定します。
 * `Movement Research` : 動きのあるオブジェクトを調査します。
 * `Research Check Song Sec(s)` : 調査する曲の経過時間を選択します。
+* `Not Dispose Memory` : 同一条件での記録時に記録メモリを開放せずに使いまわします。
+* `Min Memory Allocation Time (min)` : `Not Dispose Memory`有効時の記録メモリの最低記録確保時間です。
 * `===Movement Recorder Log===` : 記録した結果のログを表示します。
-  * `Initialize Time` : ゲーム開始時の初期化時間です。
+  * `Initialize Process Time` : ゲーム開始時の初期化処理時間です。
   * `Capture Object Count` : 記録するオブジェクトの数です。
-  * `Record Inistialize Size` : 記録用に初期化した配列の数です。
+  * `Record Array Size` : 記録用に確保した配列のサイズです。
+  * `Allocated Memory Size` : 記録用に確保した配列のメモリ消費用です。
   * `Record Count` :  記録したフレーム数です。
   * `Last Song Time` : 最後の記録フレームの曲時間です。
-  * `Save File Time` : 保存に要した時間です。
+  * `Save Process Time` : 保存処理時間です。
   * `Save File Size` : 保存したファイルのサイズです。
-  * `One Movement Recording Time` : 1フレームの記録に要した時間の平均,最大,最小時間です。
+  * `One Movement Recording Time` : 1フレームの記録処理時間の平均,最大,最小です。
+
+※`!Warning! Array size extended during play due to unexpected circumstances:* Count`と表示される場合は、プレイ中に記録用配列が不足して拡張処理を行っています。通常は曲の長さで予め確保するため起きないはずですが、もし発生する場合は連絡を下さい。
 
 ## 基本的な使い方
 
@@ -164,11 +169,16 @@ meta_json.recordCount.loop {
   }
 }
 ```
-* string ・・・ 可変長 [BinaryWriter.Write(String)](https://learn.microsoft.com/ja-jp/dotnet/api/system.io.binarywriter.write?view=net-7.0#system-io-binarywriter-write(system-string))
-* float  ・・・ 4Byte [BinaryWriter.Write(Single)](https://learn.microsoft.com/ja-jp/dotnet/api/system.io.binarywriter.write?view=net-7.0#system-io-binarywriter-write(system-single))
+* meta_json ・・・ 記録データのJSON形式のメタ情報（下記参照)
+* SongTIme ・・・ フレーム記録した曲時間
+* position ・・・ 対象オブジェクトの座標(Vector3)
+* rotation ・・・ 対象オブジェクトの回転(Quaternion)
 * meta_json.objectCountの並びはmeta_json.objectNamesと一致
+* (string) ・・・ 可変長 [BinaryWriter.Write(String)](https://learn.microsoft.com/ja-jp/dotnet/api/system.io.binarywriter.write?view=net-7.0#system-io-binarywriter-write(system-string))
+* (float)  ・・・ 4Byte [BinaryWriter.Write(Single)](https://learn.microsoft.com/ja-jp/dotnet/api/system.io.binarywriter.write?view=net-7.0#system-io-binarywriter-write(system-single))
+* loop ・・・ カウント数でループする
 
-meta_json
+meta_json構造
 ```json
 {
   "objectCount":記録オブジェクト数
