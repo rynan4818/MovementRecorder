@@ -27,8 +27,9 @@
 
 ![image](https://github.com/rynan4818/MovementRecorder/assets/14249877/df3e7665-c946-42ed-9d2b-7baea3fb3539)
 
-![image](https://github.com/rynan4818/MovementRecorder/assets/14249877/878399cd-cb14-488c-af60-feca88cbc551)
+![image](https://github.com/rynan4818/MovementRecorder/assets/14249877/43d8d90e-37b2-41a8-b7b8-ac9227feb8a6)
 
+![image](https://github.com/rynan4818/MovementRecorder/assets/14249877/7e14669e-e391-42d8-9269-719d8c8bee7a)
 
 * `Movement Recorder Enabled` : 本modの機能を有効にします。
 * `WIP Map Only` : WIP譜面でのみ記録します。
