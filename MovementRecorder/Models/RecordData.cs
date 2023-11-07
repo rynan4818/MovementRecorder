@@ -379,7 +379,8 @@ namespace MovementRecorder.Models
             var fi = new FileInfo(Path.Combine(savePath, filename));
             saveFileSize = fi.Length;
             this._saveTime = timaer.Elapsed.TotalMilliseconds;
-            PluginConfig.Instance.oneObjectSaveTime = this._saveTime / (this._transforms.Length * this._recordCount);
+            if ((this._transforms.Length * this._recordCount) > 0)
+                PluginConfig.Instance.oneObjectSaveTime = this._saveTime / (this._transforms.Length * this._recordCount);
             if (!this._saveTaskCheck)
                 return;
             Plugin.Log?.Info($"Save Time:{this._saveTime}ms  Record Count:{this._recordCount} One Time Record Ave:{this._recordTimeTotal / this._recordCount}ms Max:{this._recordTimeMax}ms Min:{this._recordTimeMin}ms");
