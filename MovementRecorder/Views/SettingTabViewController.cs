@@ -1,16 +1,17 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.GameplaySetup;
-using BeatSaberMarkupLanguage.ViewControllers;
 using MovementRecorder.Configuration;
 using MovementRecorder.Models;
+using System;
 using System.Collections.Generic;
 using TMPro;
 using Zenject;
 
 namespace MovementRecorder.Views
 {
-    public class SettingTabViewController : BSMLAutomaticViewController, IInitializable
+    public class SettingTabViewController : IInitializable, IDisposable
     {
+        private bool _disposedValue;
         private RecordData _recordData;
         public static readonly string TabName = "MOVEMENT RECORDER";
         public string ResourceName => string.Join(".", this.GetType().Namespace, this.GetType().Name);
@@ -46,11 +47,23 @@ namespace MovementRecorder.Views
             }
             this._recordData.recorderLog += this.OnRecorderLog;
         }
-        protected override void OnDestroy()
+        protected virtual void Dispose(bool disposing)
         {
-            this._recordData.recorderLog -= this.OnRecorderLog;
-            GameplaySetup.instance?.RemoveTab(TabName);
-            base.OnDestroy();
+            if (!this._disposedValue)
+            {
+                if (disposing)
+                {
+                    this._recordData.recorderLog -= this.OnRecorderLog;
+                    GameplaySetup.instance?.RemoveTab(TabName);
+                }
+                this._disposedValue = true;
+            }
+        }
+        public void Dispose()
+        {
+            // このコードを変更しないでください。クリーンアップ コードを 'Dispose(bool disposing)' メソッドに記述します
+            this.Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
 
         [UIAction("#post-parse")]
