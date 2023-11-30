@@ -99,6 +99,21 @@ namespace MovementRecorder.Configuration
                     @"^.+/VRGameCore/LeftHand/LeftSaber/LeftSaber[^/]*(/.+)?",
                     @"^.+/VRGameCore/RightHand/RightSaber/RightSaber[^/]*(/.+)?"
                 }
+            },
+            new SearchSetting()
+            {
+                name = "NalulunaSaber",
+                type = SaberType,
+                topObjectStrings = new List<string>()
+                {
+                    @"^.+/VRGameCore/LeftHand/LeftSaber/NalulunaSaber/[^/]*(?=LeftSaber)",
+                    @"^.+/VRGameCore/RightHand/RightSaber/NalulunaSaber/[^/]*(?=RightSaber)"
+                },
+                searchStirngs = new List<string>()
+                {
+                    @"^.+/VRGameCore/LeftHand/LeftSaber/NalulunaSaber/[^/]*(?=LeftSaber)[^/]*(/.+)?",
+                    @"^.+/VRGameCore/RightHand/RightSaber/NalulunaSaber/[^/]*(?=RightSaber)[^/]*(/.+)?"
+                }
             }
         };
         public virtual bool enabled { get; set; } = false;
