@@ -12,6 +12,7 @@
 - セイバー
   - [Saber Factory](https://github.com/ToniMacaroni/SaberFactory)
   - [CustomSaber](https://nalulululuna.fanbox.cc/)
+  - [NalulunaSaber](https://nalulululuna.fanbox.cc/)
 
 ※設定ファイルを作成すれば、任意のオブジェクトも記録可能です。
 
