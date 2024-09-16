@@ -24,22 +24,22 @@ namespace MovementRecorder.Configuration
                 type = AvatarType,
                 topObjectStrings = new List<string>()
                 {
-                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/"
+                    @"^.+/SpawnedAvatar[^/]+/"
                 },
-                rescaleString =  @"^.+/Avatar Container/SpawnedAvatar[^/]+$",
+                rescaleString =  @"^.+/SpawnedAvatar[^/]+$",
                 searchStirngs = new List<string>()
                 {
-                    @"^.+/Avatar Container/SpawnedAvatar[^/]+(/.+)?"
+                    @"^.+/SpawnedAvatar[^/]+(/.+)?"
                 },
                 exclusionStrings = new List<string>()
                 {
-                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/Head(/.+)?",
-                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/LeftHand(/.+)?",
-                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/LeftLeg(/.+)?",
-                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/Pelvis(/.+)?",
-                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/RightHand(/.+)?",
-                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/RightLeg(/.+)?",
-                    @"^.+/Avatar Container/SpawnedAvatar[^/]+/Body(/.+)?"
+                    @"^.+/SpawnedAvatar[^/]+/Head(/.+)?",
+                    @"^.+/SpawnedAvatar[^/]+/LeftHand(/.+)?",
+                    @"^.+/SpawnedAvatar[^/]+/LeftLeg(/.+)?",
+                    @"^.+/SpawnedAvatar[^/]+/Pelvis(/.+)?",
+                    @"^.+/SpawnedAvatar[^/]+/RightHand(/.+)?",
+                    @"^.+/SpawnedAvatar[^/]+/RightLeg(/.+)?",
+                    @"^.+/SpawnedAvatar[^/]+/Body(/.+)?"
                 }
             },
             new SearchSetting()
@@ -98,6 +98,21 @@ namespace MovementRecorder.Configuration
                 {
                     @"^.+/VRGameCore/LeftHand/LeftSaber/LeftSaber[^/]*(/.+)?",
                     @"^.+/VRGameCore/RightHand/RightSaber/RightSaber[^/]*(/.+)?"
+                }
+            },
+            new SearchSetting()
+            {
+                name = "CustomSabersLite",
+                type = SaberType,
+                topObjectStrings = new List<string>()
+                {
+                    @"^.+/VRGameCore/LeftHand/",
+                    @"^.+/VRGameCore/RightHand/"
+                },
+                searchStirngs = new List<string>()
+                {
+                    @"^.+/VRGameCore/LeftHand/LeftSaber[^/]*(/.+)?",
+                    @"^.+/VRGameCore/RightHand/RightSaber[^/]*(/.+)?"
                 }
             },
             new SearchSetting()

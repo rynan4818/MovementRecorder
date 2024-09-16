@@ -3,13 +3,13 @@
   "id": "MovementRecorder",
   "name": "MovementRecorder",
   "author": "Rynan",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "description": "Record object movement",
-  "gameVersion": "1.20.0",
+  "gameVersion": "1.35.0",
   "dependsOn": {
-    "BSIPA": "^4.2.2",
-    "SiraUtil": "^3.0.5",
-    "BeatSaberMarkupLanguage": "^1.6.3",
-    "SongCore": "^3.9.5"
+    "BSIPA": "^4.3.3",
+    "SiraUtil": "^3.1.7",
+    "BeatSaberMarkupLanguage": "^1.9.0",
+    "SongCore": "^3.13.0"
   }
 }

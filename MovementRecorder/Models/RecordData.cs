@@ -1,5 +1,4 @@
-﻿using MovementRecorder.HarmonyPatches;
-using MovementRecorder.Utility;
+﻿using MovementRecorder.Utility;
 using MovementRecorder.Configuration;
 using Newtonsoft.Json;
 using System;
