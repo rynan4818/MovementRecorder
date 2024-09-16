@@ -11,6 +11,7 @@
   - [NalulunaAvatars](https://nalulululuna.fanbox.cc/)
 - セイバー
   - [Saber Factory](https://github.com/ToniMacaroni/SaberFactory)
+  - [CustomSabersLite](https://github.com/qqrz997/CustomSabersLite) ※設定は`CustomSaber`と同じです
   - [CustomSaber](https://nalulululuna.fanbox.cc/)
   - [NalulunaSaber](https://nalulululuna.fanbox.cc/)
 
