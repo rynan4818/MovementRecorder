@@ -10,6 +10,7 @@ namespace MovementRecorder.Models
         public string songName { get; set; }
         public string serializedName { get; set; }
         public string difficulty { get; set; }
+        public int difficultyNum { get; set; }
         public List<Setting> Settings { get; set; }
         public int recordFrameRate { get; set; }
         public List<string> objectNames { get; set; }
