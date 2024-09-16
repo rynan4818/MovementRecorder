@@ -33,6 +33,7 @@ namespace MovementRecorder.Models
         public string _songName;
         public string _serializedName;
         public string _difficulty;
+        public int _difficultyNum;
         public float _startSongTime;
         public bool _wipLevel;
         public int _transformSize = 0;
@@ -58,6 +59,7 @@ namespace MovementRecorder.Models
             this._songName = null;
             this._serializedName = null;
             this._difficulty = null;
+            this._difficultyNum = 0;
             this._transforms = null;
             this._objectNames = null;
             this._scales = null;
@@ -110,6 +112,7 @@ namespace MovementRecorder.Models
             this._songName = difficultyBeatmap.level.songName;
             this._serializedName = difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
             this._difficulty = difficultyBeatmap.difficulty.Name();
+            this._difficultyNum = (int)difficultyBeatmap.difficulty;
             foreach (var customWIPLevel in SongCore.Loader.CustomWIPLevels)
             {
                 if (customWIPLevel.Value.levelID == this._levelID)
@@ -320,6 +323,7 @@ namespace MovementRecorder.Models
                 songName = this._songName,
                 serializedName = this._serializedName,
                 difficulty = this._difficulty,
+                difficultyNum = this._difficultyNum,
                 Settings = new List<Setting>(),
                 recordFrameRate = PluginConfig.Instance.recordFrameRate,
                 objectNames = this._objectNames,
