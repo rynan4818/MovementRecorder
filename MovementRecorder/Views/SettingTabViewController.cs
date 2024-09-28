@@ -12,7 +12,8 @@ namespace MovementRecorder.Views
     public class SettingTabViewController : IInitializable, IDisposable
     {
         private bool _disposedValue;
-        private RecordData _recordData;
+        private readonly RecordData _recordData;
+        private readonly GameplaySetup _gameplaySetup;
         public static readonly string TabName = "MOVEMENT RECORDER";
         public string ResourceName => string.Join(".", this.GetType().Namespace, this.GetType().Name);
 
@@ -25,14 +26,14 @@ namespace MovementRecorder.Views
         [UIComponent("recorderLog")]
         public readonly TextMeshProUGUI recorderLog;
 
-        [Inject]
-        private void Constractor(RecordData recordData)
+        private SettingTabViewController(RecordData recordData, GameplaySetup gameplaySetup)
         {
             this._recordData = recordData;
+            this._gameplaySetup = gameplaySetup;
         }
         public void Initialize()
         {
-            GameplaySetup.instance.AddTab(TabName, this.ResourceName, this, MenuType.Solo);
+            this._gameplaySetup.AddTab(TabName, this.ResourceName, this, MenuType.Solo);
             this.avatarMovementChoices.Add(PluginConfig.NoneCapture);
             this.saberMovementChoices.Add(PluginConfig.NoneCapture);
             this.otherMovementChoices.Add(PluginConfig.NoneCapture);
@@ -54,7 +55,7 @@ namespace MovementRecorder.Views
                 if (disposing)
                 {
                     this._recordData.recorderLog -= this.OnRecorderLog;
-                    GameplaySetup.instance?.RemoveTab(TabName);
+                    this._gameplaySetup?.RemoveTab(TabName);
                 }
                 this._disposedValue = true;
             }
