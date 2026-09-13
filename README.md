@@ -5,7 +5,7 @@
 
 0.3系では、Beat Saber内で記録したモデルを第三者視点から鑑賞できます。**MOVEMENT RECORDER → Replay** でファイルを選び、**Start Replay** を押します。一時停止・シーク、表情同期、Camera2のREPLAY連携、コピー元アバターの表示・オフセット設定に対応します。[リプレイの使い方](docs/Replay-ja.md) を参照してください。
 
-現在のブランチは **BS1.37.4 / MovementRecorder 0.3.1 / Beat Saber 1.37.4-1.39.1** です。
+現在のブランチは **BS1.40.0 / MovementRecorder 0.3.3 / Beat Saber 1.40.0-1.40.8** です。
 
 | Beat Saber | MovementRecorder | ブランチ |
 | --- | --- | --- |

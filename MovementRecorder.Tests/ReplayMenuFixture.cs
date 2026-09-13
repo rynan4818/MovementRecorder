@@ -118,7 +118,8 @@ public sealed class GameplayModifiers
     public GameplayModifiers CopyWith(bool noFailOn0Energy, SongSpeed songSpeed) => this;
 }
 public sealed class TestPlayerSettings { public TestPlayerSettings CopyWith(bool autoRestart) => this; }
-public sealed class TestColorSettings { public object GetOverrideColorScheme() => null; }
+public sealed class TestColorSettings
+{ public object GetOverrideColorScheme() => null; public bool ShouldOverrideLightshowColors() => false; }
 public sealed class GameplaySetupViewController
 {
     public GameplayModifiers gameplayModifiers = new GameplayModifiers();
@@ -131,7 +132,7 @@ public sealed class MenuTransitionsHelper
 {
     public int Starts;
     public BeatmapKey StartedChart;
-    public void StartStandardLevel(string mode, in BeatmapKey chart, BeatmapLevel level, IBeatmapLevelData data, object environment, object color, object beatmapColor,
+    public void StartStandardLevel(string mode, in BeatmapKey chart, BeatmapLevel level, IBeatmapLevelData data, object environment, object color, bool overrideLightshowColors, object beatmapColor,
         GameplayModifiers modifiers, TestPlayerSettings settings, PracticeSettings practice, EnvironmentsListModel environments, string back, bool a, bool b,
         object before, object switched, Action<object, object> finished, object restarted) { Starts++; StartedChart = chart; }
 }
@@ -140,11 +141,16 @@ namespace SongCore
     public sealed class TestRequirements { public string[] _requirements; }
     public sealed class TestDifficultyData { public TestRequirements additionalDifficultyData; }
     public sealed class TestFolder { public string folderPath; }
-    public sealed class TestSaveData { public TestFolder customLevelFolderInfo; }
+    public static class Loader { public static CustomLevelLoader CustomLevelLoader; }
     public static class Collections {
-        public static TestDifficultyData RetrieveDifficultyData(BeatmapLevel level, BeatmapKey key) => null;
-        public static TestSaveData GetLoadedSaveData(string id) => null;
+        public static TestDifficultyData GetCustomLevelSongDifficultyData(BeatmapKey key) => null;
     }
+}
+public sealed class CustomLevelLoader
+{
+    public struct LoadedSaveData { public SongCore.TestFolder customLevelFolderInfo; }
+    private readonly Dictionary<string, LoadedSaveData> _loadedBeatmapSaveData = new Dictionary<string, LoadedSaveData>();
+    public void Add(string id, string path) => _loadedBeatmapSaveData[id] = new LoadedSaveData { customLevelFolderInfo = new SongCore.TestFolder { folderPath = path } };
 }
 namespace HMUI
 {

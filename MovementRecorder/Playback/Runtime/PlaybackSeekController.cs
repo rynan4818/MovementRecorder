@@ -15,7 +15,7 @@ namespace MovementRecorder.Playback.Runtime
         private readonly BeatmapObjectManager _objects;
         private readonly NoteCutSoundEffectManager _sounds;
         private readonly GameSongController _song;
-        private readonly BeatmapObjectSpawnMovementData _movement;
+        private readonly IVariableMovementDataProvider _movement;
         private readonly LinkedList<BeatmapDataItem> _items;
         private readonly CallbacksInTime[] _buckets;
         private readonly EventCall[] _events;
@@ -31,7 +31,7 @@ namespace MovementRecorder.Playback.Runtime
             BeatmapObjectSpawnController spawn, NoteCutSoundEffectManager sounds, GameSongController song, NativeSegmentState segment)
         {
             _audio = audio; _callbacks = callbacks; _objects = objects; _sounds = sounds; _song = song; _segment = segment;
-            _movement = GameAccess.Get<BeatmapObjectSpawnMovementData>(spawn, "_beatmapObjectSpawnMovementData");
+            _movement = GameAccess.Get<IVariableMovementDataProvider>(spawn, "_variableMovementDataProvider");
             _items = GameAccess.Get<IReadonlyBeatmapData>(callbacks, "_beatmapData").allBeatmapDataItems;
             _buckets = GameAccess.Get<Dictionary<float, CallbacksInTime>>(callbacks, "_callbacksInTimes").Values.ToArray();
             _active = GameAccess.Get<List<IBeatmapObjectController>>(objects, "_allBeatmapObjects");

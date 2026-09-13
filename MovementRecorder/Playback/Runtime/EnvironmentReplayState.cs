@@ -86,7 +86,7 @@ namespace MovementRecorder.Playback.Runtime
         }
         private static bool IsStateAssembly(Type type) => type.Assembly == typeof(BeatmapCallbacksController).Assembly || type.Assembly == typeof(Tween).Assembly;
         private static bool IsValue(Type type) => type.IsPrimitive || type.IsEnum || type == typeof(Vector3) || type == typeof(Vector4) ||
-            type == typeof(Vector2) || type == typeof(Quaternion) || type == typeof(Color);
+            type == typeof(Vector2) || type == typeof(Quaternion) || type == typeof(Color) || type == typeof(VariableMovementDataProvider.InterpolationData);
         public void Reset()
         {
             _lastTime = 0; _fixedTime = 0;
@@ -133,6 +133,8 @@ namespace MovementRecorder.Playback.Runtime
         {
             float time = _audio.songTime;
             GameAccess.Set(_audio, "_lastFrameDeltaSongTime", Mathf.Max(0, time - _lastTime));
+            // The normal callback-frame event does not run during synchronous seeking.
+            foreach (var movement in _captured.OfType<VariableMovementDataProvider>()) movement.ManualUpdate(time);
             foreach (var effect in _captured.OfType<LightRotationEventEffect>()) if (effect.enabled) effect.Update();
             foreach (var effect in _captured.OfType<LightPairRotationEventEffect>()) if (effect.enabled) effect.Update();
             foreach (var effect in _captured.OfType<LightPairSinMoveEventEffect>()) if (effect.enabled) effect.Update();

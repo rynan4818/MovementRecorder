@@ -197,7 +197,7 @@ namespace MovementRecorder.Playback.Runtime
             if (!_audioPausedAt.HasValue) _audioPausedAt = Time.timeSinceLevelLoad;
             _gamePause.Pause(); _audio.Pause(); _updater.Pause();
             _objects.PauseAllBeatmapObjects(true); _objects.HideAllBeatmapObjects(false);
-            GameAccess.Set(_pause, "_paused", true); GameAccess.Set(_pause, "_wantsToPause", false);
+            GameAccess.Set(_pause, "_paused", PauseController.PauseState.Paused); GameAccess.Set(_pause, "_wantsToPause", false);
             if (_session.Phase == ReplayPhase.Playing) _session.SetPhase(ReplayPhase.Paused);
             if (show) { CancelDrag(); ShowPanel(); }
         }
@@ -217,7 +217,7 @@ namespace MovementRecorder.Playback.Runtime
                     _audioPausedAt = null;
                 }
                 _objects.HideAllBeatmapObjects(false); _objects.PauseAllBeatmapObjects(false);
-                GameAccess.Set(_pause, "_paused", false); GameAccess.Set(_pause, "_wantsToPause", false);
+                GameAccess.Set(_pause, "_paused", PauseController.PauseState.Playing); GameAccess.Set(_pause, "_wantsToPause", false);
                 _resumedSongTime = _audio.songTime;
                 _session.SetPhase(ReplayPhase.Playing); _gamePause.WillResume(); _gamePause.Resume();
                 _audio.Resume(); _updater.Resume();
@@ -351,7 +351,7 @@ namespace MovementRecorder.Playback.Runtime
             {
                 Plugin.Log?.Error(uiError.ToString());
                 ReplayRuntimeHooks.NativePauseFallback = true;
-                try { GameAccess.Set(_pause, "_paused", false); _pause.Pause(); }
+                try { GameAccess.Set(_pause, "_paused", PauseController.PauseState.Playing); _pause.Pause(); }
                 finally { ReplayRuntimeHooks.NativePauseFallback = false; }
             }
         }

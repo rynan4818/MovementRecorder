@@ -53,7 +53,7 @@ try {
     foreach ($name in @('Main', 'DataModels', 'BeatSaber.ViewSystem', 'Tweening', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
         $null = Read-Assembly (Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll")
     }
-    foreach ($name in @('BSML', 'SiraUtil', 'SongCore', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued', 'Camera2')) {
+    foreach ($name in @('BSML', 'SiraUtil', 'SongCore', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued', 'SongPlayHistory', 'Camera2')) {
         $path = Join-Path $GameDirectory "Plugins\$name.dll"
         if (Test-Path -LiteralPath $path) { $null = Read-Assembly $path }
     }
@@ -82,7 +82,7 @@ try {
         'BeatmapCallbacksController/CallCallbacksBehaviorWithLastState' = @('_replayState')
         CallbacksInTime = @('_callbacks', '_callbacksWithSubtypeIdentifier')
         BeatmapObjectManager = @('_allBeatmapObjects')
-        BeatmapObjectSpawnController = @('_beatmapObjectSpawnMovementData', '_isInitialized')
+        BeatmapObjectSpawnController = @('_variableMovementDataProvider', '_isInitialized')
         GameSongController = @('_songDidFinish')
         Saber = @('_saberBladeTopTransform', '_saberBladeBottomTransform')
         SaberMovementData = @('_data', '_nextAddIndex', '_validCount', '_bladeSpeed', '_dataProcessors')
@@ -106,6 +106,19 @@ try {
         BufferedLightColorGroupEffect = @('_didReceiveEventThisFrame')
     }
     foreach ($entry in $fields.GetEnumerator()) { foreach ($field in $entry.Value) { Check-Field $entry.Key $field } }
+    Check-Field 'PauseController' '_paused' 'PauseController/PauseState'
+    foreach ($state in @(@('Paused', 0), @('Playing', 2))) {
+        $value = Find-Member 'PauseController/PauseState' $state[0] 'Fields'
+        if ($value.Constant -ne $state[1]) { throw "Wrong pause state value: $($state[0])" }
+        $checks++
+    }
+    Check-Field 'BeatmapObjectSpawnController' '_variableMovementDataProvider' 'IVariableMovementDataProvider'
+    Check-Field 'VariableMovementDataProvider' '_relativeNoteJumpSpeedInterpolation' 'VariableMovementDataProvider/InterpolationData'
+    Check-Method 'VariableMovementDataProvider' 'ManualUpdate'
+    $sample = Find-Member 'VariableMovementDataProvider' 'ManualUpdate' 'Methods'
+    if (($sample.Parameters.ParameterType.FullName -join ',') -ne 'System.Single') { throw 'Wrong NJS sampling signature' }
+    $checks++
+    Check-Field 'CustomLevelLoader' '_loadedBeatmapSaveData' 'System.Collections.Generic.Dictionary`2<System.String,CustomLevelLoader/LoadedSaveData>'
     Check-Field 'SaberMovementData' '_data' 'BladeMovementDataElement[]'
     Check-Field 'SaberSwingRatingCounter' '_cutTime' 'System.Single'
     Check-Method 'MainCamera' 'get_camera' 'UnityEngine.Camera'
@@ -245,9 +258,19 @@ try {
     foreach ($type in @('LightRotationEventEffect', 'LightPairRotationEventEffect', 'LightPairSinMoveEventEffect')) { Check-Method $type 'Update' }
     foreach ($contract in @(
         @('BeatLeader', 'BeatLeader.Installers.OnGameplayCoreInstaller', 'InitRecorder'),
-        @('BeatLeader', 'BeatLeader.Utils.ScoreUtil', 'ProcessReplay'),
-        @('SongPlayHistoryContinued', 'SongPlayHistoryContinued.Plugin', 'SaveRecord')
+        @('BeatLeader', 'BeatLeader.Utils.ScoreUtil', 'ProcessReplay')
     )) { if ($loadedAssemblies.ContainsKey($contract[0])) { Check-Method $contract[1] $contract[2] } }
+    if ($loadedAssemblies.ContainsKey('SongPlayHistoryContinued') -or $loadedAssemblies.ContainsKey('SongPlayHistory')) {
+        if ($types.ContainsKey('SongPlayHistoryContinued.Plugin')) {
+            Check-Method 'SongPlayHistoryContinued.Plugin' 'SaveRecord'
+        } else {
+            $tracker = $types['SongPlayHistory.SongPlayTracking.SongPlayTracker']
+            $initialize = @($tracker.Methods | Where-Object { $_.Name -match '(^|\.)Initialize$' -and $_.Parameters.Count -eq 0 })
+            if ($initialize.Count -ne 1 -or $initialize[0].ReturnType.FullName -ne 'System.Void') { throw 'Wrong history initialization contract' }
+            $checks++
+            Check-Method 'SongPlayHistory.SongPlayTracking.SongPlayTracker' 'HandleLevelFinished'
+        }
+    }
     if ($loadedAssemblies.ContainsKey('ScoreSaber')) {
         if ($types.ContainsKey('ScoreSaber.Features.Replays.ReplayStateRegistry')) {
             Check-Method 'ScoreSaber.Features.Replays.Installers.RecordInstaller' 'InstallBindings'
@@ -368,9 +391,9 @@ try {
     }
     $reader = [IO.StreamReader]::new($resources['MovementRecorder.manifest.json'].GetResourceStream())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-    if ($manifest.gameVersion -ne '1.37.4') { throw 'gameVersion was changed' }
+    if ($manifest.gameVersion -ne '1.40.0') { throw 'gameVersion was changed' }
     $checks++
-    if ($manifest.version -ne '0.3.2') { throw 'Plugin version was changed' }
+    if ($manifest.version -ne '0.3.3') { throw 'Plugin version was changed' }
     if ($manifest.dependsOn.PSObject.Properties.Name -contains 'Camera2' -or $manifest.dependsOn.PSObject.Properties.Name -contains 'CameraPlus') {
         throw 'Camera MODs must remain optional'
     }

@@ -129,7 +129,7 @@ namespace MovementRecorder.Models
                 if (customWIPLevel.Value.levelID == this._levelID)
                 {
                     this._wipLevel = true;
-                    this._customLevelPath = SongCore.Collections.GetLoadedSaveData(this._levelID)?.customLevelFolderInfo.folderPath ?? string.Empty;
+                    this._customLevelPath = MovementRecorder.Playback.Compatibility.CustomLevelFolders.GetPath(this._levelID) ?? string.Empty;
                     break;
                 }
             }

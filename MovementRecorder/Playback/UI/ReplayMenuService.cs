@@ -133,7 +133,7 @@ namespace MovementRecorder.Playback.UI
         {
             yield return RecordDirectory;
             // Resolve from the selected chart, never from the last cover-image request.
-            string path = _chart == null ? null : SongCore.Collections.GetLoadedSaveData(_chart.Key.levelId)?.customLevelFolderInfo.folderPath;
+            string path = _chart == null ? null : CustomLevelFolders.GetPath(_chart.Key.levelId);
             if (!string.IsNullOrEmpty(path)) yield return Path.Combine(path, "MovementRecorder");
         }
         public async Task Refresh(bool rebuild)
@@ -182,7 +182,7 @@ namespace MovementRecorder.Playback.UI
             {
                 if (chart.Key.beatmapCharacteristic.serializedName != "Standard")
                     throw new InvalidOperationException("This version supports two-saber Standard maps only.");
-                var requirements = SongCore.Collections.RetrieveDifficultyData(chart.Level, chart.Key)?.additionalDifficultyData?._requirements;
+                var requirements = SongCore.Collections.GetCustomLevelSongDifficultyData(chart.Key)?.additionalDifficultyData?._requirements;
                 if (requirements?.Length > 0)
                     throw new InvalidOperationException("This version does not support maps with required extensions: " + string.Join(", ", requirements));
                 _guards.Prepare(); ReplayRuntimeHooks.Prepare();
@@ -222,7 +222,8 @@ namespace MovementRecorder.Playback.UI
                 _session.Begin(clip, showSourceAvatar, offsetSourceAvatar);
                 var modifiers = _setup.gameplayModifiers.CopyWith(noFailOn0Energy: _session.NoFail, songSpeed: GameplayModifiers.SongSpeed.Normal);
                 _transitions.StartStandardLevel(ReplaySession.GameMode, chart.Key, chart.Level, loaded.beatmapLevelData, _setup.environmentOverrideSettings,
-                    _setup.colorSchemesSettings.GetOverrideColorScheme(), chart.Level.GetColorScheme(chart.Key.beatmapCharacteristic, chart.Key.difficulty),
+                    _setup.colorSchemesSettings.GetOverrideColorScheme(), _setup.colorSchemesSettings.ShouldOverrideLightshowColors(),
+                    chart.Level.GetColorScheme(chart.Key.beatmapCharacteristic, chart.Key.difficulty),
                     modifiers, _setup.playerSettings.CopyWith(autoRestart: false),
                     new PracticeSettings { startSongTime = 0, songSpeedMul = 1 }, _environments, "Song Selection", false, true, null, null,
                     (setup, result) => { _session.Finish(); Status = "Replay finished. Scores and play history were not saved."; Notify(); }, null);
