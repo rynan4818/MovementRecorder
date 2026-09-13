@@ -65,8 +65,15 @@ namespace MovementRecorder.Models
             this._scales = null;
             this._recordNullObjects = null;
         }
+        private volatile bool _resetRecordPending;
         public void ResetRecord()
         {
+            if (this._saveTask != null && !this._saveTask.IsCompleted) { _resetRecordPending = true; return; }
+            ResetRecordCore();
+        }
+        private void ResetRecordCore()
+        {
+            _resetRecordPending = false;
             this._recordData = null;
             this._transformSize = 0;
         }
@@ -96,6 +103,7 @@ namespace MovementRecorder.Models
                 }
                 this._saveTaskCheck = this._saveTask.Wait(waitTime); //Waitするので、対象のTaskは孫メソッド中まで全てのawaitで.ConfigureAwait(false)しないとデッドロックするので注意
             }
+            if (this._saveTaskCheck && _resetRecordPending) ResetRecordCore();
             return this._saveTaskCheck;
         }
 
@@ -103,8 +111,8 @@ namespace MovementRecorder.Models
         {
             var timaer = new Stopwatch();
             timaer.Start();
-            if (!PluginConfig.Instance.notDisposeMemory)
-                this.ResetRecord();
+            if (!PluginConfig.Instance.notDisposeMemory || _resetRecordPending)
+                this.ResetRecordCore();
             this.ResetData();
             this.ResetCount();
             this._startSongTime = songTime;
@@ -269,6 +277,7 @@ namespace MovementRecorder.Models
             this._saveTaskCheck = true;
             this._saveTask = this.SavePlaydataAsync();
         }
+        public event Action<string> FileSaved;
         public async Task SavePlaydataAsync()
         {
             //Restart用にWaitするので、孫メソッド中まで全てのawaitで.ConfigureAwait(false)しないとデッドロックするので注意
@@ -327,7 +336,8 @@ namespace MovementRecorder.Models
                 Settings = new List<Setting>(),
                 recordFrameRate = PluginConfig.Instance.recordFrameRate,
                 objectNames = this._objectNames,
-                objectScales = new List<Scale>()
+                objectScales = new List<Scale>(),
+                recordNullObjects = new List<NUllObject>()
             };
             foreach (var recordNullObject in this._recordNullObjects)
             {
@@ -379,8 +389,11 @@ namespace MovementRecorder.Models
             catch (Exception ex)
             {
                 Plugin.Log?.Error(ex.ToString());
+                this.recorderLog?.Invoke("記録ファイルの保存に失敗しました。ログを確認してください。");
+                return;
             }
             var fi = new FileInfo(Path.Combine(savePath, filename));
+            try { FileSaved?.Invoke(fi.FullName); } catch (Exception ex) { Plugin.Log?.Warn(ex.ToString()); }
             saveFileSize = fi.Length;
             this._saveTime = timaer.Elapsed.TotalMilliseconds;
             if ((this._transforms.Length * this._recordCount) > 0)

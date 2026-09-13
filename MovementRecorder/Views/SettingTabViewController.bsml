@@ -1,6 +1,13 @@
 ﻿<bg xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
 	xsi:schemaLocation='https://monkeymanboy.github.io/BSML-Docs/ https://raw.githubusercontent.com/monkeymanboy/BSML-Docs/gh-pages/BSMLSchema.xsd'>
   <settings-container>
+    <text text="~replay-file" font-size="3" overflow-mode="Ellipsis" pref-height="6"/>
+    <horizontal pref-height="8" spacing="2">
+      <button text="記録ファイルを選択" on-click="choose-replay" interactable="~can-select-replay"/>
+      <button text="リプレイ" on-click="start-replay" interactable="~can-replay"/>
+      <button text="読込中止" on-click="cancel-replay-load" pref-width="19"/>
+    </horizontal>
+    <text text="~replay-status" font-size="2.7" pref-height="12"/>
     <checkbox-setting text='Movement Recorder Enabled' value='recorderEnabled' apply-on-change="true"></checkbox-setting>
     <checkbox-setting text='WIP Map Only' value='wipOnly' apply-on-change="true"></checkbox-setting>
     <dropdown-list-setting text="Avatar Movement" choices='avatarMovementChoices' value="avatarMovement" apply-on-change="true"></dropdown-list-setting>

@@ -26,6 +26,7 @@ namespace MovementRecorder
         {
             Instance = this;
             Log = logger;
+            Playback.Compatibility.ReplayLibraries.Register();
             Log.Info("MovementRecorder initialized.");
 
             //BSIPAのConfigを使用する場合はコメントを外します

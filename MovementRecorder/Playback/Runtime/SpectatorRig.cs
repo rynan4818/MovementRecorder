@@ -1,0 +1,87 @@
+using System;
+using SiraUtil.Tools.FPFC;
+using UnityEngine;
+using UnityEngine.XR;
+using Zenject;
+
+namespace MovementRecorder.Playback.Runtime
+{
+    internal sealed class SpectatorRig : IDisposable
+    {
+        private readonly Camera _source, _view;
+        private readonly GameObject _root;
+        private readonly bool _cameraEnabled;
+        private readonly SpectatorInput _input;
+        private readonly ReplaySession _session;
+        private readonly IVRPlatformHelper _platform;
+        private readonly IFPFCSettings _fpfc;
+        private readonly Transform _viewOrigin;
+        private bool _disposed;
+        public Vector3 Offset => new Vector3(_session.ObserverX, _session.ObserverY, _session.ObserverZ);
+        public Camera Camera => _view;
+
+        public SpectatorRig(ReplaySession session, PlayerTransforms player, DiContainer container)
+        {
+            _session = session;
+            _platform = container.Resolve<IVRPlatformHelper>();
+            _fpfc = container.TryResolve<IFPFCSettings>();
+            // FPFC can replace the logical head with a transform that has no camera.
+            var mainCamera = container.TryResolve<MainCamera>();
+            _source = mainCamera == null ? null : mainCamera.camera;
+            if (_source == null)
+            {
+                var head = GameAccess.Get<Transform>(player, "_headTransform");
+                if (head != null) _source = head.GetComponent<Camera>() ?? head.GetComponentInChildren<Camera>(true);
+            }
+            if (_source == null) throw new InvalidOperationException("実HMDの描画カメラを取得できません。");
+            _cameraEnabled = _source.enabled;
+            _root = new GameObject(SceneModelResolverName); _root.SetActive(false);
+            try
+            {
+                _viewOrigin = new GameObject("Spectator Camera Origin").transform; _viewOrigin.SetParent(_root.transform, false);
+                _view = new GameObject("Spectator Camera").AddComponent<Camera>(); _view.transform.SetParent(_viewOrigin, false);
+                _view.CopyFrom(_source); _view.cullingMask |= 1; _view.enabled = true;
+                // The original tracked head and AudioListener remain the game's logical head.
+                _source.enabled = false;
+                _input = new SpectatorInput(_viewOrigin, container);
+                _root.SetActive(true); Update(); Application.onBeforeRender += BeforeRender;
+            }
+            catch { Dispose(); throw; }
+        }
+        private const string SceneModelResolverName = Models.SceneModelResolver.ReplayRootName;
+        public void SetControlsVisible(bool visible) { _input.SetVisible(visible); if (visible) Update(); }
+        private void BeforeRender()
+        {
+            if (_view == null || _source == null) return;
+            // Keep the game's logical head live even on runtimes that stop tracking a disabled camera.
+            // The observer offset belongs to a separate parent, so XR's final camera pose cannot erase it.
+            if (_fpfc?.Enabled != true && _platform.GetNodePose(XRNode.Head, 0, out var position, out var rotation))
+            { _source.transform.localPosition = position; _source.transform.localRotation = rotation; }
+            var parent = _source.transform.parent;
+            _viewOrigin.SetPositionAndRotation((parent == null ? Vector3.zero : parent.position) + Offset, parent == null ? Quaternion.identity : parent.rotation);
+            _viewOrigin.localScale = parent == null ? Vector3.one : parent.lossyScale;
+            _view.transform.localPosition = _source.transform.localPosition; _view.transform.localRotation = _source.transform.localRotation;
+            if (_view.stereoTargetEye != _source.stereoTargetEye) _view.stereoTargetEye = _source.stereoTargetEye;
+            // XR owns projection while rendering to the headset; setters warn on every frame in VR.
+            if (_view.stereoTargetEye == StereoTargetEyeMask.None)
+            {
+                if (_view.fieldOfView != _source.fieldOfView) _view.fieldOfView = _source.fieldOfView;
+                if (_view.aspect != _source.aspect) _view.aspect = _source.aspect;
+            }
+        }
+        public void Update()
+        {
+            if (_source == null) throw new InvalidOperationException("HMDカメラが消失しました。");
+            BeforeRender();
+            _input?.Update(_view, _fpfc?.Enabled == true);
+        }
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            Application.onBeforeRender -= BeforeRender;
+            _input?.Dispose(); if (_source != null) _source.enabled = _cameraEnabled;
+            if (_root != null) UnityEngine.Object.Destroy(_root);
+        }
+    }
+}

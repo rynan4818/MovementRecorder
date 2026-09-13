@@ -3,6 +3,8 @@
 
 [ChroMapper-CameraMovement](https://github.com/rynan4818/ChroMapper-CameraMovement)で記録したファイルを読み込んで再生することができます。
 
+`BS1.29.1` ブランチには、Beat Saber内で記録したモデルを第三者視点から鑑賞するリプレイ機能を追加しています。MOVEMENT RECORDERタブでファイルを選び、専用のリプレイボタンから開始します。一時停止・シーク、ファイル一覧のキャッシュ、既存の頭の移動距離DBの参考表示に対応します。基本再生は実機確認済みで、ポーズ・シーク・保存抑止などの個別確認を継続しています。[リプレイの使い方](docs/Replay-ja.md) と [実装・検証報告](docs/Replay-Implementation-ja.md) を参照してください。
+
 以下のmodの記録はデフォルトで設定してあります。
 
 - アバター
@@ -32,7 +34,7 @@
 
 ![image](https://github.com/rynan4818/MovementRecorder/assets/14249877/7e14669e-e391-42d8-9269-719d8c8bee7a)
 
-* `Movement Recorder Enabled` : 本modの機能を有効にします。
+* `Movement Recorder Enabled` : 記録を有効にします。リプレイ機能はこの設定とは独立しています。
 * `WIP Map Only` : WIP譜面でのみ記録します。
 * `Avatar Movement` : アバター表示で使用しているmodを選択します。
 * `Saber Movement` : セイバー表示で使用しているmodを選択します。
