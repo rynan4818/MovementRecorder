@@ -134,12 +134,28 @@ namespace MovementRecorder.Configuration
         public virtual double oneObjectSaveTime { get; set; } = 0;
         public virtual bool notDisposeMemory { get; set; } = false;
         public virtual int minMemoryAllocation { get; set; } = 6;
+        public virtual bool showReplaySourceAvatar { get; set; } = false;
+        public virtual bool offsetReplaySourceAvatarWithHmd { get; set; } = false;
+        public virtual float replayObserverX { get; set; } = 0;
+        public virtual float replayObserverY { get; set; } = 0;
+        public virtual float replayObserverZ { get; set; } = -2;
+
+        internal static float ObserverValue(float value, float min, float max, float fallback = 0) =>
+            float.IsNaN(value) || float.IsInfinity(value) ? fallback : System.Math.Max(min, System.Math.Min(max, value));
+
+        internal void ValidateObserverPosition()
+        {
+            float x = ObserverValue(replayObserverX, -5, 5), y = ObserverValue(replayObserverY, -3, 3), z = ObserverValue(replayObserverZ, -8, 5, -2);
+            if (replayObserverX != x) replayObserverX = x;
+            if (replayObserverY != y) replayObserverY = y;
+            if (replayObserverZ != z) replayObserverZ = z;
+        }
         /// <summary>
         /// これは、BSIPAが設定ファイルを読み込むたびに（ファイルの変更が検出されたときを含めて）呼び出されます
         /// </summary>
         public virtual void OnReload()
         {
-            // 設定ファイルを読み込んだ後の処理を行う
+            ValidateObserverPosition();
         }
 
         /// <summary>

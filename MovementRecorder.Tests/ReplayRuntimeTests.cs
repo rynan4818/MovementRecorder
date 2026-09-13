@@ -20,7 +20,8 @@ namespace MovementRecorder.Tests
     [Collection("Unity fixtures")]
     public sealed class ReplayRuntimeTests : IDisposable
     {
-        public ReplayRuntimeTests() { UObject.Objects.Clear(); Application.Clear(); TimeHelper.time = 10; }
+        public ReplayRuntimeTests() { UObject.Objects.Clear(); Application.Clear(); TimeHelper.time = 10;
+            Configuration.PluginConfig.Instance = new Configuration.PluginConfig(); }
         public void Dispose() { UObject.Objects.Clear(); Application.Clear(); }
         private static GameObject Child(GameObject parent, string name)
         { var child = new GameObject(name); child.transform.SetParent(parent.transform, false); return child; }
@@ -183,6 +184,58 @@ namespace MovementRecorder.Tests
             Assert.Same(scene.previous, EventSystem.current); Assert.False(scene.right.Destroyed);
             Application.BeforeRender(); // No remaining callback may access the disposed camera.
         }
+        [Fact]
+        public void ExternalCameraPoseIncludesRoomTransformOnceAndExcludesObserverOffset()
+        {
+            var scene = Scene(false);
+            scene.main.transform.parent.SetPositionAndRotation(new Vector3(3, 0, -1), new Quaternion(0, .70710678f, 0, .70710678f));
+            var session = new ReplaySession { ObserverX = 5, ObserverZ = -4 };
+            var poses = new List<(Vector3 position, Quaternion rotation)>();
+            var rig = new SpectatorRig(session, scene.player, scene.container, headPoseUpdated: (p, r) => poses.Add((p, r)));
+            SamePosition(new Vector3(3.2f, 1.6f, -1.1f), poses.Last().position);
+            Assert.True(Quaternion.Angle(scene.main.transform.rotation, poses.Last().rotation) < .1f);
+            SamePosition(poses.Last().position + rig.Offset, rig.Camera.transform.position);
+            Assert.False(scene.main.camera.enabled);
+            session.ObserverZ = 10; rig.Update();
+            SamePosition(new Vector3(3.2f, 1.6f, -1.1f), poses.Last().position);
+            // A native Update can change the tracked head before Camera2's LateUpdate.
+            scene.main.transform.localPosition = new Vector3(.4f, 1.8f, .6f); rig.PublishHeadPose();
+            SamePosition(new Vector3(3.6f, 1.8f, -1.4f), poses.Last().position);
+            scene.main.transform.parent.position = new Vector3(-2, 0, 1);
+            scene.platform.Position = new Vector3(.3f, 1.9f, .7f); Application.BeforeRender();
+            SamePosition(new Vector3(-1.3f, 1.9f, .7f), poses.Last().position);
+            rig.Dispose(); int count = poses.Count; rig.PublishHeadPose(); Application.BeforeRender();
+            Assert.Equal(count, poses.Count);
+        }
+        [Fact] public void VisibleSourceKeepsItsPositionRelativeToSpectatorAcrossPauseSeekAndOffsetEdits()
+        {
+            var scene = Scene(false);
+            scene.main.transform.parent.SetPositionAndRotation(new Vector3(3, 0, -1), new Quaternion(0, .70710678f, 0, .70710678f));
+            var session = new ReplaySession { ObserverX = 1.5f, ObserverY = .5f, ObserverZ = -4 };
+            var avatar = new GameObject("Avatar"); Mesh(avatar);
+            var clip = Clip(avatar.transform); session.Begin(clip, true, true);
+            using var rig = new SpectatorRig(session, scene.player, scene.container);
+            using var model = new RenderModelClone(clip, new ModelBindingPlan
+                { CloneRoots = new[] { avatar.transform }, Sources = new[] { avatar.transform }, Types = new[] { "Avatar" } }, false, showSourceAvatar: true);
+            try
+            {
+                foreach (var phase in new[] { ReplayPhase.Playing, ReplayPhase.Paused, ReplayPhase.Seeking, ReplayPhase.Completed })
+                {
+                    session.SetPhase(phase); session.ObserverZ += .5f; scene.platform.Position += new Vector3(.1f, 0, .1f);
+                    rig.Update(); var bodyFromHead = new Vector3(0, -1, 0);
+                    avatar.transform.position = rig.SourceHead.position + bodyFromHead; // Provider's current tracking output.
+                    var original = avatar.transform.position; var head = rig.SourceHead.position;
+                    model.SetSourceAvatarOffset(session.OffsetSourceAvatarWithHmd, rig.Offset, new[] { rig.SourceHead }, null);
+                    Camera.onPreCull(rig.Camera);
+                    SamePosition(rig.Camera.transform.position + bodyFromHead, avatar.transform.position);
+                    SamePosition(head, rig.SourceHead.position);
+                    Camera.onPostRender(rig.Camera); SamePosition(original, avatar.transform.position);
+                }
+                Assert.Equal(session.ObserverZ, Configuration.PluginConfig.Instance.replayObserverZ);
+            }
+            finally { session.Finish(); }
+        }
+
         [Fact] public void FpfcToggleSynchronizesCameraAndPointerAndRestoresHeadTracking()
         {
             var scene = Scene(false); using var rig = new SpectatorRig(new ReplaySession(), scene.player, scene.container);

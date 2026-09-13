@@ -6,31 +6,18 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using Zenject;
-using System.ComponentModel;
 using System.Threading;
 using MovementRecorder.Playback.UI;
 
 namespace MovementRecorder.Views
 {
-    public class SettingTabViewController : IInitializable, IDisposable, INotifyPropertyChanged
+    public class SettingTabViewController : IInitializable, IDisposable
     {
         private bool _disposedValue;
         private RecordData _recordData;
         private ReplayMenuService _replay;
         private SynchronizationContext _uiContext;
-        public event PropertyChangedEventHandler PropertyChanged;
-        [UIValue("replay-status")] public string ReplayStatus => _replay.Status;
-        [UIValue("replay-file")] public string ReplayFile => _replay.Selected == null ? "記録ファイル未選択" : System.IO.Path.GetFileName(_replay.Selected.Path);
-        [UIValue("can-replay")] public bool CanReplay => _replay.CanReplay;
-        [UIValue("can-select-replay")] public bool CanSelectReplay => !_replay.Busy;
-        [UIAction("choose-replay")] private void ChooseReplay() { _replay.OpenPicker(); }
-        [UIAction("start-replay")] private void StartReplay() { _replay.StartReplay(); }
-        [UIAction("cancel-replay-load")] private void CancelReplayLoad() { _replay.CancelLoad(); ReplayChanged(); }
-        private void ReplayChanged()
-        {
-            foreach (string name in new[] { nameof(ReplayStatus), nameof(ReplayFile), nameof(CanReplay), nameof(CanSelectReplay) })
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
+        [UIAction("open-replay")] private void OpenReplay() { _replay.OpenMenu(); }
         public static readonly string TabName = "MOVEMENT RECORDER";
         public string ResourceName => string.Join(".", this.GetType().Namespace, this.GetType().Name);
 
@@ -52,7 +39,6 @@ namespace MovementRecorder.Views
         public void Initialize()
         {
             _uiContext = SynchronizationContext.Current;
-            _replay.Changed += ReplayChanged;
             GameplaySetup.instance.AddTab(TabName, this.ResourceName, this, MenuType.Solo);
             this.avatarMovementChoices.Add(PluginConfig.NoneCapture);
             this.saberMovementChoices.Add(PluginConfig.NoneCapture);
@@ -75,7 +61,6 @@ namespace MovementRecorder.Views
                 if (disposing)
                 {
                     this._recordData.recorderLog -= this.OnRecorderLog;
-                    _replay.Changed -= ReplayChanged;
                     GameplaySetup.instance?.RemoveTab(TabName);
                 }
                 this._disposedValue = true;

@@ -16,6 +16,10 @@ namespace MovementRecorder.Playback.Models
         private readonly HashSet<Renderer> _skippedRenderers = new HashSet<Renderer>();
         private readonly List<string> _skippedDescriptions = new List<string>();
         private readonly Dictionary<Renderer, bool> _hiddenSources = new Dictionary<Renderer, bool>();
+        private readonly HashSet<Renderer> _sourceRenderers = new HashSet<Renderer>();
+        private readonly bool _showSourceAvatar;
+        private HashSet<Transform> _avatarSources;
+        private SourceAvatarOffset _sourceOffset;
         private readonly Dictionary<Material, Material> _materials = new Dictionary<Material, Material>();
         private readonly List<BlendShapeBinding> _blendShapes = new List<BlendShapeBinding>();
         private readonly Dictionary<Animator, AnimatorCullingMode> _animatorCullingModes = new Dictionary<Animator, AnimatorCullingMode>();
@@ -32,10 +36,12 @@ namespace MovementRecorder.Playback.Models
         public IReadOnlyList<string> SkippedRenderers => _skippedDescriptions;
         public int ModelRootCount { get; }
 
-        public RenderModelClone(MovementClip clip, ModelBindingPlan plan, bool freezeMissing, Transform[] liveSaberRoots = null, Action<string> warning = null)
+        public RenderModelClone(MovementClip clip, ModelBindingPlan plan, bool freezeMissing, Transform[] liveSaberRoots = null, Action<string> warning = null,
+            bool showSourceAvatar = false)
         {
             _clip = clip; _freezeMissing = freezeMissing;
             _warning = warning;
+            _showSourceAvatar = showSourceAvatar;
             _liveSaberRoots = liveSaberRoots ?? new Transform[0];
             var cloneRoots = plan.CloneRoots.Where(t => !IsLiveSaber(t)).ToArray();
             ModelRootCount = cloneRoots.Length;
@@ -57,8 +63,14 @@ namespace MovementRecorder.Playback.Models
                     _affectedRenderers[i] = _affectedRenderers[i].Concat(_renderers.Values.OfType<SkinnedMeshRenderer>()
                         .Where(r => r.bones.Contains(_tracks[i]) || r.rootBone == _tracks[i])).Distinct().ToArray();
                 KeepSourceAnimatorsUpdating();
+                var visibleSources = showSourceAvatar ? plan.FindAvatarTransforms(_geometrySources) : new HashSet<Transform>();
+                _avatarSources = visibleSources;
                 foreach (var source in _renderers.Keys.Concat(_skippedRenderers))
-                    { _hiddenSources[source] = source.forceRenderingOff; source.forceRenderingOff = true; }
+                {
+                    _sourceRenderers.Add(source);
+                    if (visibleSources.Contains(source.transform)) continue;
+                    _hiddenSources[source] = source.forceRenderingOff; source.forceRenderingOff = true;
+                }
                 Apply(clip.StartTime);
                 SyncLiveExpressions(true);
                 _root.SetActive(true);
@@ -66,6 +78,16 @@ namespace MovementRecorder.Playback.Models
             catch { Dispose(); throw; }
         }
         private bool IsLiveSaber(Transform source) => source != null && _liveSaberRoots.Any(root => root != null && source.IsChildOf(root));
+        public void SetSourceAvatarOffset(bool enabled, Vector3 offset, Transform[] protectedRoots, Action<Exception> failure)
+        {
+            // Gate before enumeration, helper allocation, camera subscription or frame-guard creation.
+            if (_disposed || !_showSourceAvatar || !enabled || !SourceAvatarOffset.HasOffset(offset))
+            { StopSourceAvatarOffset(); return; }
+            if (_sourceOffset != null) _sourceOffset.SetOffset(offset);
+            else _sourceOffset = SourceAvatarOffset.Create(_geometrySources, _avatarSources, _sourceRenderers,
+                _liveSaberRoots.Concat(protectedRoots ?? new Transform[0]), offset, failure);
+        }
+        public void StopSourceAvatarOffset() { _sourceOffset?.Dispose(); _sourceOffset = null; }
         private static int Depth(Transform t) { int depth = 0; for (; t != null; t = t.parent) depth++; return depth; }
         private Transform CopyAncestor(Transform source)
         {
@@ -186,10 +208,10 @@ namespace MovementRecorder.Playback.Models
         }
         public void KeepSourcesHidden()
         {
-            foreach (var source in _hiddenSources.Keys)
+            foreach (var source in _sourceRenderers)
             {
                 if (source == null) throw new InvalidOperationException("再生元のモデルがシーンから消失しました。");
-                source.forceRenderingOff = true;
+                if (_hiddenSources.ContainsKey(source)) source.forceRenderingOff = true;
             }
         }
         // Read the final renderer output, whether it was produced by Animator, VRM or another provider.
@@ -272,9 +294,11 @@ namespace MovementRecorder.Playback.Models
         {
             if (_disposed) return;
             _disposed = true;
+            StopSourceAvatarOffset();
             StopLiveExpressions();
             foreach (var pair in _hiddenSources) if (pair.Key != null) pair.Key.forceRenderingOff = pair.Value;
             _hiddenSources.Clear();
+            _sourceRenderers.Clear();
             if (_root != null) UnityEngine.Object.Destroy(_root);
             foreach (var material in _materials.Values) if (material != null) UnityEngine.Object.Destroy(material);
             _materials.Clear();

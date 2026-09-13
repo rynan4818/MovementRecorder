@@ -50,14 +50,32 @@ function Check-Method([string]$type, [string]$method, [string]$returns = 'System
     $script:checks++
 }
 try {
-    foreach ($name in @('Main', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule')) {
+    foreach ($name in @('Main', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
         $null = Read-Assembly (Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll")
     }
-    foreach ($name in @('BSML', 'SiraUtil', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued')) {
+    foreach ($name in @('BSML', 'SiraUtil', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued', 'Camera2')) {
         $path = Join-Path $GameDirectory "Plugins\$name.dll"
         if (Test-Path -LiteralPath $path) { $null = Read-Assembly $path }
     }
     $product = Read-Assembly $PluginAssembly
+    Check-Method 'IPA.Loader.PluginManager' 'GetPluginFromId' 'IPA.Loader.PluginMetadata'
+    Check-Method 'IPA.Loader.PluginMetadata' 'get_Assembly' 'System.Reflection.Assembly'
+    if ($loadedAssemblies.ContainsKey('Camera2')) {
+        foreach ($contract in @(
+            @('Camera2.SDK.ReplaySources', 'Register', 'Camera2.SDK.ReplaySources/ISource', $true),
+            @('Camera2.SDK.ReplaySources', 'Unregister', 'Camera2.SDK.ReplaySources/ISource', $true),
+            @('Camera2.SDK.ReplaySources/GenericSource', '.ctor', 'System.String', $false),
+            @('Camera2.SDK.ReplaySources/GenericSource', 'SetActive', 'System.Boolean', $false),
+            @('Camera2.SDK.ReplaySources/GenericSource', 'Update', 'UnityEngine.Vector3&,UnityEngine.Quaternion&', $false)
+        )) {
+            Check-Method $contract[0] $contract[1]
+            $method = Find-Member $contract[0] $contract[1] 'Methods'
+            if (!$method.IsPublic -or $method.IsStatic -ne $contract[3] -or ($method.Parameters.ParameterType.FullName -join ',') -ne $contract[2]) {
+                throw "Wrong Camera2 public API contract: $($contract[0]).$($contract[1])"
+            }
+            $checks++
+        }
+    }
     $fields = @{
         AudioTimeSyncController = @('_songTime', '_startSongTime', '_lastFrameDeltaSongTime', '_isReady', '_audioStartTimeOffsetSinceStart', '_audioStarted', '_audioSource')
         BeatmapCallbacksController = @('_beatmapData', '_callbacksInTimes', '_prevSongTime', '_songTime', '_startFilterTime', '_callCallbacksBehavior')
@@ -120,6 +138,76 @@ try {
     Check-Method 'UnityEngine.GameObject' 'set_layer'
     Check-Method 'UnityEngine.Camera' 'get_cullingMask' 'System.Int32'
     Check-Method 'UnityEngine.Camera' 'set_cullingMask'
+    Check-Method 'HMUI.TableView' 'ClearSelection'
+    Check-Method 'HMUI.TableView' 'SelectCellWithIdx'
+    $selectCell = Find-Member 'HMUI.TableView' 'SelectCellWithIdx' 'Methods'
+    if (($selectCell.Parameters.ParameterType.FullName -join ',') -ne 'System.Int32,System.Boolean') { throw 'Wrong table selection signature' }
+    $dismiss = Find-Member 'BeatSaberMarkupLanguage.BeatSaberUI' 'DismissFlowCoordinator' 'Methods'
+    if (($dismiss.Parameters.ParameterType.FullName -join ',') -ne 'HMUI.FlowCoordinator,HMUI.FlowCoordinator,System.Action,HMUI.ViewController/AnimationDirection,System.Boolean') {
+        throw 'Wrong BSML flow dismissal callback signature'
+    }
+    $checks += 2
+    $textHandler = $types['BeatSaberMarkupLanguage.TypeHandlers.TextMeshProUGUIHandler']
+    $textProps = @($textHandler.Methods | Where-Object Name -eq 'get_Props' | ForEach-Object { $_.Body.Instructions } |
+        Where-Object { $_.OpCode.Name -eq 'ldstr' } | ForEach-Object Operand)
+    foreach ($property in @('font-color', 'rich-text')) {
+        if ($property -notin $textProps) { throw "Missing BSML text property: $property" }
+        $checks++
+    }
+    Check-Method 'BeatSaberMarkupLanguage.Components.CustomCellTableCell' 'RefreshVisuals'
+    Check-Method 'TMPro.TMP_Text' 'set_text'
+    Check-Method 'UnityEngine.UI.Graphic' 'set_color'
+    $rowType = $product.MainModule.GetType('MovementRecorder.Playback.UI.ReplayFileRow')
+    foreach ($id in @('row-info', 'row-distance')) {
+        $textField = @($rowType.Fields | Where-Object {
+            @($_.CustomAttributes | Where-Object { $_.AttributeType.Name -in @('UIComponent', 'UIComponentAttribute') -and $_.ConstructorArguments[0].Value -eq $id }).Count -eq 1
+        })
+        if ($textField.Count -ne 1 -or $textField[0].FieldType.FullName -ne 'TMPro.TextMeshProUGUI') { throw "Wrong replay row component: $id" }
+        $checks++
+    }
+    $rowRefresh = @($rowType.Methods | Where-Object {
+        @($_.CustomAttributes | Where-Object { $_.AttributeType.Name -in @('UIAction', 'UIActionAttribute') -and $_.ConstructorArguments[0].Value -eq 'refresh-visuals' }).Count -eq 1
+    })
+    if ($rowRefresh.Count -ne 1 -or ($rowRefresh[0].Parameters.ParameterType.FullName -join ',') -ne 'System.Boolean,System.Boolean') {
+        throw 'Replay cell refresh must accept the BSML selected/highlighted flags'
+    }
+    $checks++
+    $config = $product.MainModule.GetType('MovementRecorder.Configuration.PluginConfig').Properties | Where-Object Name -eq 'showReplaySourceAvatar'
+    if ($null -eq $config -or $config.PropertyType.FullName -ne 'System.Boolean' -or !$config.GetMethod.IsVirtual -or !$config.SetMethod.IsVirtual) {
+        throw 'Source avatar setting must be a persisted virtual bool property'
+    }
+    $checks++
+    foreach ($setting in @(
+        @('offsetReplaySourceAvatarWithHmd', 'System.Boolean'),
+        @('replayObserverX', 'System.Single'), @('replayObserverY', 'System.Single'), @('replayObserverZ', 'System.Single')
+    )) {
+        $property = $product.MainModule.GetType('MovementRecorder.Configuration.PluginConfig').Properties | Where-Object Name -eq $setting[0]
+        if ($null -eq $property -or $property.PropertyType.FullName -ne $setting[1] -or
+            !$property.GetMethod.IsPublic -or !$property.SetMethod.IsPublic -or !$property.GetMethod.IsVirtual -or !$property.SetMethod.IsVirtual) {
+            throw "Observer setting must be a public persisted virtual property: $($setting[0])"
+        }
+        $checks++
+    }
+    foreach ($callback in @('onPreCull', 'onPostRender')) { Check-Field 'UnityEngine.Camera' $callback 'UnityEngine.Camera/CameraCallback' }
+    Check-Method 'UnityEngine.Camera/CameraCallback' 'Invoke'
+    $cameraCallback = Find-Member 'UnityEngine.Camera/CameraCallback' 'Invoke' 'Methods'
+    if (($cameraCallback.Parameters.ParameterType.FullName -join ',') -ne 'UnityEngine.Camera') { throw 'Wrong camera render callback signature' }
+    $checks++
+    Check-Method 'UnityEngine.SkinnedMeshRenderer' 'get_updateWhenOffscreen' 'System.Boolean'
+    Check-Method 'UnityEngine.SkinnedMeshRenderer' 'set_updateWhenOffscreen'
+    Check-Method 'UnityEngine.WaitForEndOfFrame' '.ctor'
+    Check-Method 'UnityEngine.Time' 'get_frameCount' 'System.Int32'
+    $guard = $product.MainModule.GetType('MovementRecorder.Playback.Models.SourceAvatarOffsetFrameGuard')
+    $order = @($guard.CustomAttributes | Where-Object { $_.AttributeType.FullName -eq 'UnityEngine.DefaultExecutionOrder' })
+    if ($order.Count -ne 1 -or $order[0].ConstructorArguments[0].Value -ne -32000) { throw 'Avatar restoration must run before provider simulation' }
+    $checks++
+    $runtime = $product.MainModule.GetType('MovementRecorder.Playback.Runtime.PlaybackRuntime')
+    foreach ($method in $runtime.Methods | Where-Object Name -in @('Update', 'LateUpdate', 'WriteLatePoses')) {
+        if (@($method.Body.Instructions | Where-Object {
+            $_.Operand -is [Mono.Cecil.MethodReference] -and $_.Operand.Name -in @('UpdateSourceAvatarOffset', 'SetSourceAvatarOffset')
+        }).Count -ne 0) { throw 'Avatar offset setup must not run from the regular replay frame loop' }
+    }
+    $checks++
     $cameraClone = $product.MainModule.GetType('MovementRecorder.Playback.Runtime.SpectatorCameraClone')
     if ($null -eq $cameraClone) { throw 'Missing spectator camera clone helper' }
     $cloneCalls = @($cameraClone.Methods | Where-Object HasBody | ForEach-Object { $_.Body.Instructions } | Where-Object {
@@ -212,7 +300,7 @@ try {
         $checks++
     }
     foreach ($reference in $product.MainModule.AssemblyReferences) {
-        if ($reference.Name -in @('BeatLeader', 'ScoreSaber', 'HeadDistanceTravelled', 'HDTCounter', 'CustomAvatar', 'VMCAvatar', 'NalulunaAvatars', 'NalulunaAvatarsLite', 'CustomKeyEvents', 'VRM', 'VRM10', 'UniGLTF', 'SaberFactory', 'CustomSaber', 'CustomSabers')) { throw "Unexpected assembly dependency: $($reference.Name)" }
+        if ($reference.Name -in @('Camera2', 'CameraPlus', 'BeatLeader', 'ScoreSaber', 'HeadDistanceTravelled', 'HDTCounter', 'CustomAvatar', 'VMCAvatar', 'NalulunaAvatars', 'NalulunaAvatarsLite', 'CustomKeyEvents', 'VRM', 'VRM10', 'UniGLTF', 'SaberFactory', 'CustomSaber', 'CustomSabers')) { throw "Unexpected assembly dependency: $($reference.Name)" }
     }
     $checks++
     $bindings = @{}
@@ -228,6 +316,16 @@ try {
     foreach ($resource in $product.MainModule.Resources | Where-Object Name -like '*.bsml') {
         $reader = [IO.StreamReader]::new($resource.GetResourceStream())
         try { [xml]$xml = $reader.ReadToEnd() } finally { $reader.Dispose() }
+        if ($resource.Name -in @('MovementRecorder.Playback.UI.ReplayFileViewController.bsml', 'MovementRecorder.Playback.UI.ReplayControlsViewController.bsml')) {
+            foreach ($axis in @(@('observer-x', '-5', '5'), @('observer-y', '-3', '3'), @('observer-z', '-8', '5'))) {
+                $setting = @($xml.SelectNodes("//increment-setting[@value='$($axis[0])']"))
+                if ($setting.Count -ne 1 -or $setting[0].GetAttribute('increment') -ne '0.1' -or
+                    $setting[0].GetAttribute('min') -ne $axis[1] -or $setting[0].GetAttribute('max') -ne $axis[2]) {
+                    throw "Wrong 0.1 m observer control: $($resource.Name) $($axis[0])"
+                }
+                $checks++
+            }
+        }
         foreach ($attribute in $xml.SelectNodes('//@*')) {
             $binding = if ($attribute.Value.StartsWith('~')) { $attribute.Value.Substring(1) } elseif ($attribute.Name -in @('on-click', 'value', 'choices', 'contents', 'select-cell', 'formatter')) { $attribute.Value } else { $null }
             if ($binding -and !$bindings.ContainsKey($binding)) { throw "Unbound BSML attribute: $($resource.Name) $($attribute.Name)=$binding" }
@@ -261,6 +359,12 @@ try {
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
     if ($manifest.gameVersion -ne '1.20.0') { throw 'gameVersion was changed' }
     $checks++
+    if ($manifest.version -ne '0.2.4') { throw 'Plugin version was changed' }
+    if ($manifest.dependsOn.PSObject.Properties.Name -contains 'Camera2' -or $manifest.dependsOn.PSObject.Properties.Name -contains 'CameraPlus') {
+        throw 'Camera MODs must remain optional'
+    }
+    if ($manifest.loadAfter -notcontains 'Camera2') { throw 'Missing optional Camera2 load order' }
+    $checks += 3
     [pscustomobject]@{ Checks = $checks; Result = 'Passed'; Plugin = [IO.Path]::GetFullPath($PluginAssembly); GameVersionInManifest = $manifest.gameVersion }
 } finally {
     foreach ($definition in $definitions) { $definition.Dispose() }

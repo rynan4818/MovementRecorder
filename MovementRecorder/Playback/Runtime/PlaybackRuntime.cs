@@ -5,6 +5,7 @@ using System.Linq;
 using BeatSaberMarkupLanguage;
 using BeatSaberMarkupLanguage.FloatingScreen;
 using MovementRecorder.Playback.Data;
+using MovementRecorder.Playback.Compatibility;
 using MovementRecorder.Playback.Models;
 using MovementRecorder.Playback.UI;
 using SiraUtil.Submissions;
@@ -18,6 +19,7 @@ namespace MovementRecorder.Playback.Runtime
     {
         public static PlaybackRuntime Current { get; private set; }
         [Inject] private readonly ReplaySession _session = null;
+        [Inject] private readonly Camera2ReplayInterop _camera2 = null;
         [Inject] private readonly AudioTimeSyncController _audio = null;
         [Inject] private readonly BeatmapCallbacksController _callbacks = null;
         [Inject] private readonly BeatmapCallbacksUpdater _updater = null;
@@ -91,7 +93,12 @@ namespace MovementRecorder.Playback.Runtime
                 Pause(false);
                 try
                 {
-                    if (_rig == null) _rig = new SpectatorRig(_session, _player, _container, s => Plugin.Log?.Info(s));
+                    if (_rig == null)
+                    {
+                        var replayId = _session.Id;
+                        _rig = new SpectatorRig(_session, _player, _container, s => Plugin.Log?.Info(s),
+                            (position, rotation) => _camera2.UpdatePose(replayId, position, rotation));
+                    }
                     EnsurePanel();
                     if (_seek == null)
                         _seek = new PlaybackSeekController(_audio, _callbacks, _objects, _spawn, _sounds, _song,
@@ -131,11 +138,12 @@ namespace MovementRecorder.Playback.Runtime
             {
                 if (EndTime <= StartTime) throw new InvalidOperationException("記録と音声の再生範囲が重なりません。");
                 _driver.TakeControl();
-                _model = new RenderModelClone(_session.Clip, Plan, Profile.FreezeMissing, _driver.SaberRoots, s => Plugin.Log?.Warn(s));
+                _model = new RenderModelClone(_session.Clip, Plan, Profile.FreezeMissing, _driver.SaberRoots, s => Plugin.Log?.Warn(s), _session.ShowSourceAvatar);
                 _rig.SetModelLayerMask(_model.SyncLiveRendererLayers());
                 foreach (string skipped in _model.SkippedRenderers) Plugin.Log?.Warn("Replay renderer omitted: " + skipped);
                 Plugin.Log?.Info($"Replay models ready: {Plan.Sources.Count(t => t != null)} tracks, {_model.ModelRootCount} cloned avatar/other roots, 2 live sabers, {StartTime:0.000}–{EndTime:0.000}s");
                 _ready = true; _session.SetPhase(ReplayPhase.Seeking);
+                UpdateSourceAvatarOffset();
                 _seek.Seek(StartTime, _model.Apply, _driver.PrepareHistory);
                 Plugin.Log?.Info($"Replay initial seek and saber history ready at {_audio.songTime:0.000}s");
                 _audioPausedAt = Time.timeSinceLevelLoad;
@@ -251,6 +259,11 @@ namespace MovementRecorder.Playback.Runtime
             }
             catch (Exception ex) { Fail(ex); }
         }
+        private void LateUpdate()
+        {
+            // Order -1000: read the live head after native Update, before Camera2's normal LateUpdate.
+            if (!_exiting) _rig?.PublishHeadPose();
+        }
         internal void WriteLatePoses()
         {
             if (!_ready || _exiting) return;
@@ -302,11 +315,27 @@ namespace MovementRecorder.Playback.Runtime
             _session.ClearError(); _session.SetPhase(ReplayPhase.Binding); _binding = StartCoroutine(BindModels());
         }
         public void SaveProfile() { JsonCache.Write(_profilePath, Profile, s => Plugin.Log?.Warn(s)); }
-        public void ObserverChanged() { if (_session.Phase == ReplayPhase.Playing) Pause(false); _rig?.Update(); PositionPanel(); }
+        private void UpdateSourceAvatarOffset()
+        {
+            if (!_ready || _exiting || _model == null || _rig == null) return;
+            if (!_session.ShowSourceAvatar || !_session.OffsetSourceAvatarWithHmd || !SourceAvatarOffset.HasOffset(_rig.Offset))
+            { _model.StopSourceAvatarOffset(); return; }
+            _model.SetSourceAvatarOffset(true, _rig.Offset, new[] { _rig.SourceHead, _rig.Camera.transform,
+                GameAccess.Get<Transform>(_player, "_headTransform"), _screen == null ? null : _screen.transform }, Fail);
+        }
+        public void ObserverChanged()
+        {
+            try
+            {
+                if (_session.Phase == ReplayPhase.Playing) Pause(false);
+                _rig?.Update(); UpdateSourceAvatarOffset(); PositionPanel();
+            }
+            catch (Exception ex) { Fail(ex); }
+        }
         public void Exit()
         {
             if (_exiting) return;
-            Pause(false); HidePanel(); _exiting = true; _model?.StopLiveExpressions();
+            Pause(false); HidePanel(); _exiting = true; _model?.StopSourceAvatarOffset(); _model?.StopLiveExpressions();
             _session.SetPhase(ReplayPhase.Disposing); _return.ReturnToMenu();
         }
         private void Fail(Exception exception)
@@ -314,6 +343,7 @@ namespace MovementRecorder.Playback.Runtime
             if (_exiting) return;
             try { Pause(false); } catch (Exception nested) { Plugin.Log?.Warn(nested.ToString()); }
             _ready = false; _pending = null; _interaction = _dragging = false;
+            _model?.StopSourceAvatarOffset();
             _model?.StopLiveExpressions();
             _session.Fail(exception.Message); Message = exception.Message; Plugin.Log?.Error(exception.ToString());
             try { ShowPanel(); _view?.ShowBindings(); }

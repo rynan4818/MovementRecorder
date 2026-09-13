@@ -144,12 +144,13 @@ namespace UnityEngine
         internal readonly List<Transform> Children = new List<Transform>();
         public Transform parent { get; private set; }
         public Vector3 localPosition, localScale = Vector3.one;
+        public int PositionReads, PositionWrites;
         public Quaternion localRotation = Quaternion.identity;
         public Vector3 lossyScale => parent == null ? localScale : Vector3.Scale(parent.lossyScale, localScale);
         public Vector3 position
         {
-            get => parent == null ? localPosition : parent.position + parent.rotation * Vector3.Scale(parent.lossyScale, localPosition);
-            set => localPosition = parent == null ? value : Vector3.Divide(Quaternion.Inverse(parent.rotation) * (value - parent.position), parent.lossyScale);
+            get { PositionReads++; CheckAlive(); return parent == null ? localPosition : parent.position + parent.rotation * Vector3.Scale(parent.lossyScale, localPosition); }
+            set { PositionWrites++; CheckAlive(); localPosition = parent == null ? value : Vector3.Divide(Quaternion.Inverse(parent.rotation) * (value - parent.position), parent.lossyScale); }
         }
         public Quaternion rotation
         {

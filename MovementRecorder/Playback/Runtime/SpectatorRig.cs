@@ -16,14 +16,18 @@ namespace MovementRecorder.Playback.Runtime
         private readonly IVRPlatformHelper _platform;
         private readonly IFPFCSettings _fpfc;
         private readonly Transform _viewOrigin;
+        private readonly Action<Vector3, Quaternion> _headPoseUpdated;
         private int _modelLayerMask;
         private bool _disposed;
         public Vector3 Offset => new Vector3(_session.ObserverX, _session.ObserverY, _session.ObserverZ);
         public Camera Camera => _view;
+        public Transform SourceHead => _source == null ? null : _source.transform;
 
-        public SpectatorRig(ReplaySession session, PlayerTransforms player, DiContainer container, Action<string> log = null)
+        public SpectatorRig(ReplaySession session, PlayerTransforms player, DiContainer container, Action<string> log = null,
+            Action<Vector3, Quaternion> headPoseUpdated = null)
         {
             _session = session;
+            _headPoseUpdated = headPoseUpdated;
             _platform = container.Resolve<IVRPlatformHelper>();
             _fpfc = container.TryResolve<IFPFCSettings>();
             // FPFC can replace the logical head with a transform that has no camera.
@@ -65,6 +69,7 @@ namespace MovementRecorder.Playback.Runtime
             // The observer offset belongs to a separate parent, so XR's final camera pose cannot erase it.
             if (_fpfc?.Enabled != true && _platform.GetNodePose(XRNode.Head, 0, out var position, out var rotation))
             { _source.transform.localPosition = position; _source.transform.localRotation = rotation; }
+            PublishHeadPose();
             var parent = _source.transform.parent;
             _viewOrigin.SetPositionAndRotation((parent == null ? Vector3.zero : parent.position) + Offset, parent == null ? Quaternion.identity : parent.rotation);
             _viewOrigin.localScale = parent == null ? Vector3.one : parent.lossyScale;
@@ -82,6 +87,13 @@ namespace MovementRecorder.Playback.Runtime
             if (_source == null) throw new InvalidOperationException("HMDカメラが消失しました。");
             BeforeRender();
             _input?.Update(_view, _fpfc?.Enabled == true);
+        }
+        public void PublishHeadPose()
+        {
+            if (_disposed || _source == null || _headPoseUpdated == null) return;
+            // The source's parent already applies the game's room center/rotation once.
+            // Camera2's replay API consumes that pose directly. The observer offset belongs to _view only.
+            _headPoseUpdated(_source.transform.position, _source.transform.rotation);
         }
         public void Dispose()
         {

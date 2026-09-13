@@ -39,6 +39,23 @@ namespace MovementRecorder.Playback.Models
         public Transform[] CloneRoots { get; set; }
         public List<BindingIssue> Issues { get; set; }
         public bool Ready => Issues.Count == 0;
+
+        public HashSet<Transform> FindAvatarTransforms(IEnumerable<Transform> geometry)
+        {
+            var types = new Dictionary<Transform, string>();
+            for (int i = 0; i < Sources.Length; i++)
+                if (Sources[i] != null && Types != null && i < Types.Length && Types[i] != null) types[Sources[i]] = Types[i];
+            var result = new HashSet<Transform>();
+            foreach (var source in geometry)
+                for (var parent = source; parent != null; parent = parent.parent)
+                    if (types.TryGetValue(parent, out string type))
+                    {
+                        // A more specific Other track keeps its own visibility policy inside an avatar.
+                        if (type == "Avatar") result.Add(source);
+                        break;
+                    }
+            return result;
+        }
     }
 
     internal sealed class SceneModelResolver

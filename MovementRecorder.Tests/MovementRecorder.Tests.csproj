@@ -12,6 +12,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="LiteDB" Version="5.0.21" />
     <Compile Include="..\MovementRecorder\Models\MovementJson.cs" Link="Product\MovementJson.cs" />
+    <Compile Include="..\MovementRecorder\Configuration\PluginConfig.cs" Link="Product\PluginConfig.cs" />
     <Compile Include="..\MovementRecorder\Playback\Data\*.cs" Link="Product\%(Filename)%(Extension)" />
     <Compile Include="..\MovementRecorder\Playback\Models\*.cs" Link="Product\%(Filename)%(Extension)" />
     <Compile Include="..\MovementRecorder\Playback\Runtime\RecordedSaberDriver.cs" Link="Product\RecordedSaberDriver.cs" />
@@ -19,5 +20,9 @@
     <Compile Include="..\MovementRecorder\Playback\Runtime\SpectatorCameraClone.cs" Link="Product\SpectatorCameraClone.cs" />
     <Compile Include="..\MovementRecorder\Playback\Runtime\SpectatorInput.cs" Link="Product\SpectatorInput.cs" />
     <Compile Include="..\MovementRecorder\Playback\Runtime\GameAccess.cs" Link="Product\GameAccess.cs" />
+    <Compile Include="..\MovementRecorder\Playback\ReplaySession.cs" Link="Product\ReplaySession.cs" />
+    <Compile Include="..\MovementRecorder\Playback\Compatibility\Camera2ReplayInterop.cs" Link="Product\Camera2ReplayInterop.cs" />
+    <Compile Include="..\MovementRecorder\Playback\UI\ReplayMenuService.cs" Link="Product\ReplayMenuService.cs" />
+    <Compile Include="..\MovementRecorder\Playback\UI\ReplayFile*.cs" Link="Product\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

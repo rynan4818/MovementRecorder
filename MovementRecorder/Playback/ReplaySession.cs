@@ -1,4 +1,5 @@
 using System;
+using MovementRecorder.Configuration;
 using MovementRecorder.Playback.Data;
 using SiraUtil.Submissions;
 
@@ -28,18 +29,54 @@ namespace MovementRecorder.Playback
         public MovementClip Clip { get; private set; }
         public string Error { get; private set; }
         public bool NoFail { get; set; } = true;
-        public float ObserverX { get; set; }
-        public float ObserverY { get; set; }
-        public float ObserverZ { get; set; } = -2;
+        public bool ShowSourceAvatar { get; private set; }
+        public bool OffsetSourceAvatarWithHmd { get; private set; }
+        private float _observerX, _observerY, _observerZ = -2;
+        // Both menu controls and in-game controls use these setters. Only edits write configuration.
+        public float ObserverX
+        {
+            get => _observerX;
+            set { _observerX = ObserverEdit(value, -5, 5); var config = PluginConfig.Instance;
+                if (config != null && config.replayObserverX != _observerX) config.replayObserverX = _observerX; }
+        }
+        public float ObserverY
+        {
+            get => _observerY;
+            set { _observerY = ObserverEdit(value, -3, 3); var config = PluginConfig.Instance;
+                if (config != null && config.replayObserverY != _observerY) config.replayObserverY = _observerY; }
+        }
+        public float ObserverZ
+        {
+            get => _observerZ;
+            set { _observerZ = ObserverEdit(value, -8, 5, -2); var config = PluginConfig.Instance;
+                if (config != null && config.replayObserverZ != _observerZ) config.replayObserverZ = _observerZ; }
+        }
         private Submission _submission;
         private Ticket _ticket;
         public int? GameplaySceneHandle { get; private set; }
         public int? DestroyedAtFrame { get; private set; }
-        public ReplaySession() { Current = this; }
+        public ReplaySession() { Current = this; LoadObserverPosition(); }
+        private static float ObserverEdit(float value, float min, float max, float fallback = 0)
+        {
+            value = PluginConfig.ObserverValue(value, min, max, fallback);
+            // BSML accumulates float increments. Remove noise around tenths, especially when returning to zero.
+            float tenth = (float)(Math.Round((double)value * 10) / 10);
+            return Math.Abs(value - tenth) < .0001f ? tenth : value;
+        }
+        public void LoadObserverPosition()
+        {
+            if (IsActive) return;
+            var config = PluginConfig.Instance;
+            if (config == null) return;
+            config.ValidateObserverPosition();
+            _observerX = config.replayObserverX; _observerY = config.replayObserverY; _observerZ = config.replayObserverZ;
+        }
         public void SetPhase(ReplayPhase phase) { Phase = phase; }
-        public void Begin(MovementClip clip)
+        public void Begin(MovementClip clip, bool showSourceAvatar = false, bool offsetSourceAvatarWithHmd = false)
         {
             if (IsActive) throw new InvalidOperationException("リプレイは既に実行中です。");
+            ShowSourceAvatar = showSourceAvatar;
+            OffsetSourceAvatarWithHmd = offsetSourceAvatarWithHmd;
             Clip = clip; Error = null; Id = Guid.NewGuid(); Phase = ReplayPhase.Starting; GameplaySceneHandle = DestroyedAtFrame = null;
             MovementReplay.NotifySession(Id, true);
         }

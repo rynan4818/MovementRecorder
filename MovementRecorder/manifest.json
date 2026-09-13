@@ -6,6 +6,7 @@
   "version": "0.2.4",
   "description": "Record object movement",
   "gameVersion": "1.20.0",
+  "loadAfter": [ "Camera2" ],
   "dependsOn": {
     "BSIPA": "^4.2.2",
     "SiraUtil": "^3.0.5",

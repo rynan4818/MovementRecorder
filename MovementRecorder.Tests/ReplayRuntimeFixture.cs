@@ -18,9 +18,15 @@ namespace UnityEngine
 {
     public class Behaviour : Component { public bool enabled = true; public bool isActiveAndEnabled => enabled && gameObject.activeInHierarchy; }
     public class MonoBehaviour : Behaviour { }
+    [AttributeUsage(AttributeTargets.Class)] public sealed class DefaultExecutionOrder : Attribute
+    { public DefaultExecutionOrder(int order) { } }
+    public sealed class WaitForEndOfFrame { }
     public enum StereoTargetEyeMask { None, Left, Right, Both }
     public sealed class Camera : Behaviour
     {
+        public delegate void CameraCallback(Camera camera);
+        public static CameraCallback onPreCull, onPostRender;
+        public static Camera main => Object.Objects.OfType<Camera>().FirstOrDefault(c => c != null && c.isActiveAndEnabled && c.gameObject.tag == "MainCamera");
         public int cullingMask;
         public RenderTexture targetTexture;
         public float nearClipPlane = .1f, farClipPlane = 1000, depth;
@@ -35,7 +41,7 @@ namespace UnityEngine
         private void CheckProjectionWrite()
         { if (stereoTargetEye != StereoTargetEyeMask.None) throw new InvalidOperationException("Cannot set projection while VR is enabled"); ProjectionWrites++; }
     }
-    public static class Application
+    public static partial class Application
     {
         public static event Action onBeforeRender;
         public static void BeforeRender() => onBeforeRender?.Invoke();
@@ -159,8 +165,4 @@ namespace HarmonyLib
         }
         public static MethodInfo Method(Type type, string name) => type.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
     }
-}
-namespace MovementRecorder.Playback
-{
-    internal sealed class ReplaySession { public float ObserverX, ObserverY, ObserverZ = -2; }
 }

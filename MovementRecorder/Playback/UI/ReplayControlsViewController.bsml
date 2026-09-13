@@ -14,11 +14,11 @@
       </horizontal>
       <slider-setting id="timeline" text="再生位置" value="position" min="0" max="3600" increment="0.1" formatter="format-time" apply-on-change="true" interactable="~ready" pref-height="8"/>
       <horizontal pref-height="8">
-        <increment-setting text="左右 (m)" value="observer-x" increment="0.5" min="-5" max="5" apply-on-change="true" pref-width="60"/>
-        <increment-setting text="上下 (m)" value="observer-y" increment="0.5" min="-3" max="3" apply-on-change="true" pref-width="60"/>
+        <increment-setting text="左右 (m)" value="observer-x" increment="0.1" min="-5" max="5" apply-on-change="true" pref-width="60"/>
+        <increment-setting text="上下 (m)" value="observer-y" increment="0.1" min="-3" max="3" apply-on-change="true" pref-width="60"/>
       </horizontal>
       <horizontal pref-height="8">
-        <increment-setting text="前後 (m)" value="observer-z" increment="0.5" min="-8" max="5" apply-on-change="true" pref-width="60"/>
+        <increment-setting text="前後 (m)" value="observer-z" increment="0.1" min="-8" max="5" apply-on-change="true" pref-width="60"/>
         <button text="モデルの対応設定" on-click="binding" pref-width="58"/>
       </horizontal>
       <text text="スコア・プレイ履歴は保存しません。HDTの距離記録は通常どおりです。" font-size="2.5" pref-height="6"/>

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BeatSaberMarkupLanguage;
+using MovementRecorder.Configuration;
 using MovementRecorder.Models;
 using MovementRecorder.Playback.Compatibility;
 using MovementRecorder.Playback.Data;
@@ -34,14 +35,15 @@ namespace MovementRecorder.Playback.UI
         private bool _disposed;
         public event Action Changed;
         public MovementFileMetadata Selected { get; private set; }
-        public MovementFileMetadata Candidate { get; private set; }
         public MovementFileMetadata[] Files { get; private set; } = new MovementFileMetadata[0];
         public HeadDistanceResult Distances { get; private set; } = new HeadDistanceResult();
         public string Status { get; private set; } = "記録ファイルを選択してください。";
         public bool Busy { get; private set; }
         public string CacheDirectory { get; private set; }
         public string RecordDirectory { get; private set; }
-        public bool CanReplay => !Busy && _flow?.Opened != true && !MovementReplay.IsActive && Selected?.Error == null && Selected?.FrameCount > 0 &&
+        public bool CanEdit => !_disposed && !Busy && _flow?.Closing != true && !MovementReplay.IsActive;
+        public bool CanCancel => Busy && _flow?.Closing != true && !MovementReplay.IsActive;
+        public bool CanReplay => CanEdit && _flow?.Opened == true && Selected?.Error == null && Selected?.FrameCount > 0 &&
             Selected.Confirmed && Selected.ChartKey == _chartKey;
         public ReplaySession Session => _session;
         private string ChartScope => _chart == null ? "" : _chart.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName + " / " +
@@ -91,29 +93,32 @@ namespace MovementRecorder.Playback.UI
             _nextPoll = Time.unscaledTime + .25f;
             if (_flow == null || !_flow.Opened)
             {
-                var chart = CurrentChart();
-                string key = chart == null ? null : ChartIdentity.Key(chart.level.levelID, chart.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName, (int)chart.difficulty);
-                if (key != _chartKey)
-                {
-                    CancelLoad(); CancelScan(); _chart = chart; _chartKey = key;
-                    Candidate = null; Selected = null; Files = new MovementFileMetadata[0]; Distances = new HeadDistanceResult();
-                    Status = chart == null ? "Soloで曲と難易度を選択してください。" : "記録ファイルを選択してください。";
-                    Notify();
-                }
+                SetChart(CurrentChart());
             }
             if (Interlocked.Exchange(ref _saved, 0) != 0)
             { _refreshTimes.Enqueue(Time.unscaledTime + .5f); _refreshTimes.Enqueue(Time.unscaledTime + 2f); }
             if (_chart != null && _refreshTimes.Count > 0 && _refreshTimes.Peek() <= Time.unscaledTime && !Busy)
-            { _refreshTimes.Dequeue(); Refresh(false); }
+            { _refreshTimes.Dequeue(); _ = Refresh(false); }
         }
-        public void OpenPicker()
+        private static string KeyOf(IDifficultyBeatmap chart) => chart == null ? null :
+            ChartIdentity.Key(chart.level.levelID, chart.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName, (int)chart.difficulty);
+        private void SetChart(IDifficultyBeatmap chart)
         {
-            if (MovementReplay.IsActive || Busy) return;
-            var current = CurrentChart();
-            if (current == null) { Status = "Soloで曲と難易度を選択してください。"; Notify(); return; }
-            _chart = current; _chartKey = ChartIdentity.Key(current.level.levelID, current.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName, (int)current.difficulty);
+            string key = KeyOf(chart);
+            _chart = chart;
+            if (key == _chartKey) return;
+            CancelLoad(); CancelScan(); _chartKey = key;
+            Selected = null; Files = new MovementFileMetadata[0]; Distances = new HeadDistanceResult();
+            Status = chart == null ? "Soloで曲と難易度を選択してください。" : "記録ファイルを選択してください。";
+            Notify();
+        }
+        public void OpenMenu()
+        {
+            if (!CanEdit || _flow?.Opened == true) return;
+            _session.LoadObserverPosition();
+            SetChart(CurrentChart());
             if (_flow == null) { _flow = BeatSaberUI.CreateFlowCoordinator<ReplayFileFlowCoordinator>(); _flow.Configure(this); }
-            _flow.Show(); Refresh(false);
+            _flow.Show(); _ = Refresh(false);
         }
         private IEnumerable<string> Folders()
         {
@@ -122,9 +127,9 @@ namespace MovementRecorder.Playback.UI
             if (_chart?.level is CustomPreviewBeatmapLevel custom && !string.IsNullOrEmpty(custom.customLevelPath))
                 yield return Path.Combine(custom.customLevelPath, "MovementRecorder");
         }
-        public async void Refresh(bool rebuild)
+        public async Task Refresh(bool rebuild)
         {
-            if (_disposed || MovementReplay.IsActive || _chart == null) return;
+            if (!CanEdit || _chart == null) return;
             CancelScan(); var cancellation = _scanCancellation = new CancellationTokenSource(); var token = cancellation.Token; int generation = ++_scanGeneration;
             var folders = Folders().ToArray(); string key = _chartKey;
             Status = "記録ファイルを確認しています…"; Notify();
@@ -133,11 +138,10 @@ namespace MovementRecorder.Playback.UI
                 var catalog = await _catalog;
                 var snapshot = await catalog.ScanAsync(folders, rebuild, token);
                 var distances = await Task.Run(() => _distance.Read(snapshot.Files, token, rebuild), token);
-                if (_disposed || generation != _scanGeneration || key != _chartKey || MovementReplay.IsActive) return;
+                if (_disposed || generation != _scanGeneration || key != _chartKey || Busy || MovementReplay.IsActive) return;
                 Files = snapshot.FilesForChart(folders, key);
                 Distances = distances;
-                if (Selected != null) Selected = Files.FirstOrDefault(f => f.Path == Selected.Path && f.SameSource(Selected));
-                if (Candidate != null) Candidate = Files.FirstOrDefault(f => f.Path == Candidate.Path);
+                if (Selected != null) Selected = Files.FirstOrDefault(f => f.SameSource(Selected));
                 Status = Files.Length == 0 ? ChartScope + " の記録は見つかりません。" : ChartScope + ": " + Files.Length + " 件の記録。スコア・履歴は保存しません。";
                 if (snapshot.Warnings.Length > 0) Status += "\n一部のフォルダを確認できませんでした。";
                 Plugin.Log?.Debug($"Replay catalog: {_chart.level.levelID}, {ChartScope}, matches={Files.Length}, files={snapshot.Files.Length}, headers={snapshot.HeadersRead}, cache={snapshot.CacheHits}");
@@ -146,21 +150,24 @@ namespace MovementRecorder.Playback.UI
             catch (OperationCanceledException) { }
             catch (Exception ex) { if (generation == _scanGeneration) { Status = "一覧を更新できません: " + ex.Message; Notify(); } Plugin.Log?.Warn(ex.ToString()); }
         }
-        public void SelectCandidate(int index)
-        { Candidate = index >= 0 && index < Files.Length ? Files[index] : null; Notify(); }
-        public void ConfirmSelection()
+        public void SelectFile(int index)
         {
-            if (Candidate == null || Candidate.Error != null || Candidate.FrameCount == 0 || Candidate.ChartKey != _chartKey || !Candidate.Confirmed) return;
-            Selected = Candidate; Status = "選択した記録をタブの「リプレイ」で再生できます。"; Notify(); _flow?.Close();
+            if (!CanEdit || index < 0 || index >= Files.Length) return;
+            Selected = Files[index]; Notify();
         }
-        public void PickerClosed() { CancelScan(); Notify(); }
+        public void MenuClosed() { CancelScan(); Notify(); }
+        public void MenuClosing() { CancelScan(); Notify(); }
         public double? DistanceFor(MovementFileMetadata file) => !Distances.Available || file == null ? null :
             Distances.Matches.Where(m => m.Path == file.Path && m.HeaderHash == file.HeaderHash).Select(m => (double?)m.Distance).FirstOrDefault();
-        public async void StartReplay()
+        public async Task StartReplay()
         {
             if (!CanReplay || _chart == null) return;
+            CancelScan();
             CancelLoad(); var cancellation = _loadCancellation = new CancellationTokenSource(); var token = cancellation.Token; int generation = ++_loadGeneration;
-            var selected = Selected; var chart = _chart; string key = _chartKey;
+            var selected = Selected.Copy(); var chart = _chart; string key = _chartKey;
+            bool showSourceAvatar = PluginConfig.Instance.showReplaySourceAvatar;
+            bool offsetSourceAvatar = PluginConfig.Instance.offsetReplaySourceAvatarWithHmd;
+            _session.LoadObserverPosition();
             Busy = true; Status = "記録を読み込んでいます…"; Notify();
             try
             {
@@ -171,16 +178,33 @@ namespace MovementRecorder.Playback.UI
                     throw new InvalidOperationException("必須拡張がある譜面は初期版の対象外です: " + string.Join(", ", requirements));
                 _guards.Prepare(); ReplayRuntimeHooks.Prepare();
                 if (_record._saveTask != null && !_record._saveTask.IsCompleted)
-                { Status = "直前の記録の保存完了を待っています…"; Notify(); await WaitForSave(_record._saveTask, token); }
+                { Status = "直前の記録の保存完了を待っています…"; Notify(); await WaitWithCancellation(_record._saveTask, token); }
+                token.ThrowIfCancellationRequested();
                 long retained = _record._recordData == null ? 0 : (long)_record._recordData.Length * (16L + _record._transformSize * 28L);
                 var clip = await Task.Run(() => new MovementFileReader().ReadClip(selected.Path, selected,
                     MovementFileReader.DefaultMemoryBudget - retained, token), token);
-                var current = CurrentChart();
-                if (_disposed || generation != _loadGeneration || _chartKey != key || current == null ||
-                    ChartIdentity.Key(current.level.levelID, current.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName, (int)current.difficulty) != key) return;
+                token.ThrowIfCancellationRequested();
+                if (_disposed || generation != _loadGeneration || _chartKey != key) return;
                 if (!clip.Header.Settings.Any(s => s.type == "Saber")) throw new InvalidOperationException("左右のセイバーを記録したファイルを選択してください。");
+                Status = "リプレイを開始します…"; Notify();
+                // The underlying chart view is inactive while the menu is presented.
+                // Read it again only after dismissal, and keep cancellation valid through the animation.
+                await WaitWithCancellation(_flow.CloseForReplay(), token);
+                token.ThrowIfCancellationRequested();
+                if (_disposed || generation != _loadGeneration) return;
+                var current = CurrentChart();
+                if (_chartKey != key || KeyOf(current) != key)
+                {
+                    SetChart(current); Status = "選択中の譜面が変わりました。記録を選び直してください。";
+                    _flow.Show(); Notify(); return;
+                }
+                if (Selected == null || !selected.SameSource(Selected) || !selected.MatchesAttributes(new FileInfo(selected.Path)))
+                {
+                    Selected = null;
+                    throw new InvalidOperationException("選択した記録が変更されました。一覧を更新して選び直してください。");
+                }
                 _guards.Prepare();
-                _session.Begin(clip);
+                _session.Begin(clip, showSourceAvatar, offsetSourceAvatar);
                 var modifiers = _setup.gameplayModifiers.CopyWith(noFailOn0Energy: _session.NoFail, songSpeed: GameplayModifiers.SongSpeed.Normal);
                 _transitions.StartStandardLevel(ReplaySession.GameMode, chart, chart.level, _setup.environmentOverrideSettings,
                     _setup.colorSchemesSettings.GetOverrideColorScheme(), modifiers, _setup.playerSettings.CopyWith(autoRestart: false),
@@ -190,12 +214,23 @@ namespace MovementRecorder.Playback.UI
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                if (generation == _loadGeneration) { Status = "リプレイを開始できません: " + ex.Message; if (_session.IsActive) _session.Finish(); Notify(); }
+                if (generation == _loadGeneration)
+                {
+                    Status = "リプレイを開始できません: " + ex.Message;
+                    if (ex is IOException || ex is InvalidDataException || ex is UnauthorizedAccessException) Selected = null;
+                    if (_session.IsActive) _session.Finish();
+                    if (!_disposed && _flow?.Opened == false) _flow.Show();
+                    Notify();
+                }
                 Plugin.Log?.Error(ex.ToString());
             }
-            finally { if (generation == _loadGeneration) { Busy = false; Notify(); } }
+            finally
+            {
+                if (generation == _loadGeneration) { _loadCancellation = null; Busy = false; Notify(); }
+                cancellation.Dispose();
+            }
         }
-        private static async Task WaitForSave(Task task, CancellationToken token)
+        private static async Task WaitWithCancellation(Task task, CancellationToken token)
         {
             var cancelled = new TaskCompletionSource<bool>();
             using (token.Register(() => cancelled.TrySetCanceled()))

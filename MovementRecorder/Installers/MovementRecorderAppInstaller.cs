@@ -12,6 +12,7 @@ namespace MovementRecorder.Installers
             this.Container.BindInterfacesAndSelfTo<RecordData>().AsSingle().NonLazy();
             this.Container.Bind<ReplaySession>().AsSingle().NonLazy();
             this.Container.Bind<ReplaySaveGuards>().AsSingle();
+            this.Container.BindInterfacesAndSelfTo<Camera2ReplayInterop>().AsSingle().NonLazy();
         }
     }
 }
