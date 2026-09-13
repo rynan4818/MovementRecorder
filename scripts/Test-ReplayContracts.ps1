@@ -52,7 +52,7 @@ function Check-Method([string]$type, [string]$method, [string]$returns = 'System
     $script:checks++
 }
 try {
-    foreach ($name in @('Main', 'DataModels', 'BeatSaber.ViewSystem', 'Tweening', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
+    foreach ($name in @('Main', 'DataModels', 'BeatSaber.ViewSystem', 'BeatSaber.Destinations', 'Tweening', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
         $path = Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll"
         if ($name -eq 'IPA.Loader' -and !(Test-Path -LiteralPath $path) -and $DependencyDirectory) { $path = Join-Path $DependencyDirectory "$name.dll" }
         $null = Read-Assembly $path
@@ -128,6 +128,7 @@ try {
     Check-Field 'SaberSwingRatingCounter' '_cutTime' 'System.Single'
     Check-Method 'MainCamera' 'get_camera' 'UnityEngine.Camera'
     Check-Method 'TimeHelper' 'get_Time' 'System.Single'
+    Check-Method 'IReturnToMenuController' 'ReturnToMenu'
     Check-Method 'SiraUtil.Tools.FPFC.IFPFCSettings' 'get_Enabled' 'System.Boolean'
     Check-Method 'Saber' 'OverridePositionAndRotation'
     Check-Field 'VRUIControls.VRPointer' '_laserPointerPrefab' 'VRUIControls.VRLaserPointer'
