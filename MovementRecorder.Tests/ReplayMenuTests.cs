@@ -144,7 +144,7 @@ namespace MovementRecorder.Tests
             await Open(); string path = _service.Selected.Path;
             if (replace) File.SetLastWriteTimeUtc(path, File.GetLastWriteTimeUtc(path).AddMinutes(1)); else File.Delete(path);
             await _service.Refresh(false);
-            Assert.Null(_service.Selected); Assert.False(_service.CanReplay); Assert.DoesNotContain(View.Rows.Cast<ReplayFileRow>(), row => row.Title.StartsWith("選択中"));
+            Assert.Null(_service.Selected); Assert.False(_service.CanReplay); Assert.DoesNotContain(View.Rows.Cast<ReplayFileRow>(), row => row.Title.StartsWith("Selected"));
         }
 
         [Fact] public async Task OlderCatalogCompletionCannotReplaceLoadingState()
@@ -164,14 +164,14 @@ namespace MovementRecorder.Tests
             _chart.selectedDifficultyBeatmap = new TestBeatmap { difficulty = BeatmapDifficulty.Hard };
             BeatSaberUI.PendingDismiss(); await run;
             Assert.Equal(0, _transitions.Starts); Assert.False(_session.IsActive); Assert.True(Flow.Opened);
-            Assert.Null(_service.Selected); Assert.False(_service.CanReplay); Assert.Contains("譜面が変わりました", _service.Status);
+            Assert.Null(_service.Selected); Assert.False(_service.CanReplay); Assert.Contains("The selected map has changed", _service.Status);
         }
 
         [Fact] public async Task LoadFailureRemainsInMenuWithActionableStatus()
         {
             await Open(); File.Delete(_service.Selected.Path); await _service.StartReplay();
             Assert.True(Flow.Opened); Assert.False(_service.Busy); Assert.Equal(0, _transitions.Starts);
-            Assert.Contains("開始できません", _service.Status); Assert.Null(BeatSaberUI.PendingDismiss);
+            Assert.Contains("Cannot start replay", _service.Status); Assert.Null(BeatSaberUI.PendingDismiss);
             Assert.Null(_service.Selected); Assert.False(_service.CanReplay);
         }
 
@@ -180,7 +180,7 @@ namespace MovementRecorder.Tests
             await Open(); var run = _service.StartReplay(); await WaitUntil(() => BeatSaberUI.PendingDismiss != null);
             File.Delete(_service.Selected.Path); BeatSaberUI.PendingDismiss(); await run;
             Assert.Equal(0, _transitions.Starts); Assert.False(_session.IsActive); Assert.True(Flow.Opened);
-            Assert.Null(_service.Selected); Assert.False(_service.CanReplay); Assert.Contains("記録が変更されました", _service.Status);
+            Assert.Null(_service.Selected); Assert.False(_service.CanReplay); Assert.Contains("The selected recording has changed", _service.Status);
         }
 
         [Fact] public async Task SelectionPaintsBothTextsAndNewCellsWithoutReloadingRows()
@@ -195,20 +195,20 @@ namespace MovementRecorder.Tests
             GameAccess.Call(previous, "Parsed");
             _service.SelectFile(1);
             Assert.Equal(rows, View.Rows); Assert.Equal(0, list.tableView.Reloads);
-            Assert.DoesNotContain("選択中", previousInfo.text); Assert.Equal(Color.white, previousInfo.color);
-            Assert.StartsWith("選択中", info.text); Assert.Contains(next.Label, info.text); Assert.Contains(next.Detail, info.text);
+            Assert.DoesNotContain("Selected", previousInfo.text); Assert.Equal(Color.white, previousInfo.color);
+            Assert.StartsWith("Selected", info.text); Assert.Contains(next.Label, info.text); Assert.Contains(next.Detail, info.text);
             Assert.DoesNotContain("\n", info.text); Assert.NotEqual(Color.white, info.color); Assert.Equal(info.color, distance.color);
             // A cell recreated after scrolling must paint its current selection without a property event.
             UObject.Destroy(info); var replacement = new GameObject("Recreated info").AddComponent<TMPro.TextMeshProUGUI>();
             GameAccess.Set(next, "_infoText", replacement); GameAccess.Call(next, "Parsed");
-            Assert.Equal(distance.color, replacement.color); Assert.StartsWith("選択中", replacement.text);
+            Assert.Equal(distance.color, replacement.color); Assert.StartsWith("Selected", replacement.text);
             GameAccess.Call(previous, "RefreshVisuals", true, true); // A rejected native click must not override the service's selection.
             Assert.Equal(Color.white, previousInfo.color);
             string path = _service.Selected.Path;
             GameAccess.Call(View, "ToggleSettings"); GameAccess.Call(View, "ToggleSettings");
             Assert.Equal(path, _service.Selected.Path); Assert.Contains(Path.GetFileName(path), View.SelectedFile);
             await _service.Refresh(false);
-            Assert.Equal(path, _service.Selected.Path); Assert.Single(View.Rows.Cast<ReplayFileRow>(), row => row.Title.StartsWith("選択中"));
+            Assert.Equal(path, _service.Selected.Path); Assert.Single(View.Rows.Cast<ReplayFileRow>(), row => row.Title.StartsWith("Selected"));
         }
     }
 }

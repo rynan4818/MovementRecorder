@@ -389,7 +389,7 @@ namespace MovementRecorder.Models
             catch (Exception ex)
             {
                 Plugin.Log?.Error(ex.ToString());
-                this.recorderLog?.Invoke("記録ファイルの保存に失敗しました。ログを確認してください。");
+                this.recorderLog?.Invoke("Failed to save the recording file. Check the log.");
                 return;
             }
             var fi = new FileInfo(Path.Combine(savePath, filename));

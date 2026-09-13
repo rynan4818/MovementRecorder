@@ -31,6 +31,7 @@ if ($Package) {
     $null = New-Item -ItemType Directory -Path $plugins, $documentation
     Copy-Item -LiteralPath $dll -Destination $plugins
     Copy-Item -LiteralPath (Join-Path $repo 'docs\Replay-ja.md'), (Join-Path $repo 'docs\Replay-Implementation-ja.md'),
+        (Join-Path $repo 'docs\Replay-English-UI-Plan-ja.md'),
         (Join-Path $repo 'docs\Replay-FileList-Fix-ja.md'), (Join-Path $repo 'docs\Replay-HDT-Startup-Fix-ja.md'),
         (Join-Path $repo 'docs\Replay-Model-Startup-Fix-ja.md'),
         (Join-Path $repo 'docs\Replay-Native-Sabers-Fix-ja.md'),

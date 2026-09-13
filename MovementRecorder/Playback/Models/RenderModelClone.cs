@@ -52,7 +52,7 @@ namespace MovementRecorder.Playback.Models
                 foreach (var source in _geometrySources) CopyRenderers(source, _transforms[source]);
                 foreach (var source in cloneRoots)
                     if (_skippedRenderers.Any(r => r.transform.IsChildOf(source)) && !_renderers.Keys.Any(r => r.transform.IsChildOf(source)))
-                        throw new InvalidOperationException("再生できるメッシュがありません。未対応の描画だけで構成されたモデルです: " + SceneModelResolver.PathOf(source));
+                        throw new InvalidOperationException("No replayable mesh found. The model contains only unsupported renderers: " + SceneModelResolver.PathOf(source));
                 foreach (var pair in _renderers) Rebind(pair.Key, pair.Value);
                 foreach (var source in _geometrySources) CopyLod(source, _transforms[source]);
                 _tracks = plan.Sources.Select(s => s != null && _transforms.TryGetValue(s, out var clone) ? clone : null).ToArray();
@@ -132,7 +132,7 @@ namespace MovementRecorder.Playback.Models
                 else if (original is MeshRenderer)
                 {
                     var filter = source.GetComponent<MeshFilter>();
-                    if (filter == null || filter.sharedMesh == null) throw new InvalidOperationException("MeshFilterがありません: " + SceneModelResolver.PathOf(source));
+                    if (filter == null || filter.sharedMesh == null) throw new InvalidOperationException("Missing MeshFilter: " + SceneModelResolver.PathOf(source));
                     var targetFilter = target.GetComponent<MeshFilter>() ?? target.gameObject.AddComponent<MeshFilter>();
                     targetFilter.sharedMesh = filter.sharedMesh; copy = target.gameObject.AddComponent<MeshRenderer>();
                 }
@@ -158,7 +158,7 @@ namespace MovementRecorder.Playback.Models
         {
             if (original == null) return null;
             if (_transforms.TryGetValue(original, out var target)) return target;
-            throw new InvalidOperationException(purpose + " がコピー範囲の外にあります。モデル全体のルートを指定してください: " + SceneModelResolver.PathOf(original));
+            throw new InvalidOperationException(purpose + " is outside the cloned hierarchy. Select the root of the entire model: " + SceneModelResolver.PathOf(original));
         }
         private void Rebind(Renderer original, Renderer copy)
         {
@@ -178,7 +178,7 @@ namespace MovementRecorder.Playback.Models
             target.SetLODs(source.GetLODs().Select(lod => new LOD(lod.screenRelativeTransitionHeight,
                 lod.renderers.Where(r => r == null || (!IsLiveSaber(r.transform) && !_skippedRenderers.Contains(r)))
                     .Select(r => r == null ? null : _renderers.TryGetValue(r, out var targetRenderer) ? targetRenderer :
-                    throw new InvalidOperationException("LOD参照がモデルの外にあります。")).ToArray()) { fadeTransitionWidth = lod.fadeTransitionWidth }).ToArray());
+                    throw new InvalidOperationException("An LOD reference is outside the model.")).ToArray()) { fadeTransitionWidth = lod.fadeTransitionWidth }).ToArray());
             target.enabled = source.enabled;
         }
         public void Apply(float time)
@@ -210,7 +210,7 @@ namespace MovementRecorder.Playback.Models
         {
             foreach (var source in _sourceRenderers)
             {
-                if (source == null) throw new InvalidOperationException("再生元のモデルがシーンから消失しました。");
+                if (source == null) throw new InvalidOperationException("The source model is no longer in the scene.");
                 if (_hiddenSources.ContainsKey(source)) source.forceRenderingOff = true;
             }
         }

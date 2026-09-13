@@ -34,7 +34,7 @@ namespace MovementRecorder.Playback.Models
             foreach (var skin in skins)
                 foreach (var bone in skin.bones.Concat(new[] { skin.rootBone }))
                     if (bone != null && !selected.Contains(bone))
-                        throw new InvalidOperationException("コピー元アバターのボーンが移動範囲の外にあります。モデル全体のルートを指定してください: " + SceneModelResolver.PathOf(bone));
+                        throw new InvalidOperationException("A source avatar bone is outside the offset hierarchy. Select the root of the entire model: " + SceneModelResolver.PathOf(bone));
 
             var boundaries = new Dictionary<Transform, bool>();
             foreach (var transform in selected)
@@ -75,7 +75,7 @@ namespace MovementRecorder.Playback.Models
         internal void SetOffset(Vector3 offset)
         {
             if (!Number.IsFinite(offset.x) || !Number.IsFinite(offset.y) || !Number.IsFinite(offset.z))
-                throw new ArgumentException("アバターのオフセット値が不正です。");
+                throw new ArgumentException("The avatar offset is invalid.");
             // Nested cameras use the same captured pose. A changed value takes effect at the next outer camera.
             _offset = offset;
         }
@@ -149,8 +149,8 @@ namespace MovementRecorder.Playback.Models
             public Boundary(Transform transform, bool move) { _transform = transform; _parent = transform.parent; _move = move; }
             public void Capture()
             {
-                if (_transform == null) throw new InvalidOperationException("コピー元アバターの移動対象が消失しました。");
-                if (_transform.parent != _parent) throw new InvalidOperationException("コピー元アバターの階層が変わりました。モデルを再準備してください。");
+                if (_transform == null) throw new InvalidOperationException("A source avatar object to offset is no longer available.");
+                if (_transform.parent != _parent) throw new InvalidOperationException("The source avatar hierarchy has changed. Set up the model again.");
                 _worldPosition = _transform.position; _localPosition = _transform.localPosition;
             }
             public void Apply(Vector3 offset) { _transform.position = _move ? _worldPosition + offset : _worldPosition; }

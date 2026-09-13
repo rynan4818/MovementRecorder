@@ -2,7 +2,7 @@
 	xsi:schemaLocation='https://monkeymanboy.github.io/BSML-Docs/ https://raw.githubusercontent.com/monkeymanboy/BSML-Docs/gh-pages/BSMLSchema.xsd'>
   <settings-container>
     <horizontal pref-height="8" spacing="2">
-      <button text="リプレイ" on-click="open-replay"/>
+      <button text="Replay" on-click="open-replay"/>
     </horizontal>
     <checkbox-setting text='Movement Recorder Enabled' value='recorderEnabled' apply-on-change="true"></checkbox-setting>
     <checkbox-setting text='WIP Map Only' value='wipOnly' apply-on-change="true"></checkbox-setting>

@@ -62,9 +62,9 @@ namespace MovementRecorder.Playback.Runtime
         public float StartTime => Mathf.Max(0, _session.Clip.StartTime);
         public float EndTime => Mathf.Min(_session.Clip.EndTime, _audio.songEndTime - .01f);
         public float TimePosition => _pending ?? _audio.songTime;
-        public string Message { get; private set; } = "モデルを準備しています…";
-        private string PlaybackMessage => "リプレイ：スコア・履歴は保存しません。" +
-            (_model?.SkippedRenderers.Count > 0 ? "\n軌跡など一部の追加エフェクトを省略しています。" : "");
+        public string Message { get; private set; } = "Preparing models…";
+        private string PlaybackMessage => "Replay: Scores and play history are not saved." +
+            (_model?.SkippedRenderers.Count > 0 ? "\nSome extra effects, such as trails, are omitted." : "");
 
         private void Awake() { Current = this; gameObject.AddComponent<ReplayLatePoseWriter>().Runtime = this; }
         private IEnumerator Start()
@@ -109,7 +109,7 @@ namespace MovementRecorder.Playback.Runtime
                         _driver = new RecordedSaberDriver(_session.Clip, Plan, _sabers, Profile);
                         break;
                     }
-                    Message = Plan.Issues.Count + " 件の対応を確認しています…";
+                    Message = "Checking " + Plan.Issues.Count + " mappings…";
                 }
                 catch (Exception ex) { lastError = ex; }
                 yield return new WaitForSecondsRealtime(.25f);
@@ -117,8 +117,8 @@ namespace MovementRecorder.Playback.Runtime
             if (_exiting) yield break;
             if (Plan?.Ready != true || _driver == null)
             {
-                Message = lastError?.Message ?? "モデルを自動で対応付けできません。対応設定でルートを選ぶか、同じモデルを読み込んで再確認してください。";
-                if (_view == null) Fail(lastError ?? new InvalidOperationException("曲の準備が完了しませんでした。曲選択へ戻って再試行してください。"));
+                Message = lastError?.Message ?? "Cannot map models automatically. Select a root in Model Mapping, or load the same model and select Recheck.";
+                if (_view == null) Fail(lastError ?? new InvalidOperationException("Song setup did not finish. Return to song selection and try again."));
                 else
                 {
                     Plugin.Log?.Warn(Message);
@@ -136,7 +136,7 @@ namespace MovementRecorder.Playback.Runtime
             }
             try
             {
-                if (EndTime <= StartTime) throw new InvalidOperationException("記録と音声の再生範囲が重なりません。");
+                if (EndTime <= StartTime) throw new InvalidOperationException("The recording and audio have no overlapping playback range.");
                 _driver.TakeControl();
                 _model = new RenderModelClone(_session.Clip, Plan, Profile.FreezeMissing, _driver.SaberRoots, s => Plugin.Log?.Warn(s), _session.ShowSourceAvatar);
                 _rig.SetModelLayerMask(_model.SyncLiveRendererLayers());
@@ -234,7 +234,7 @@ namespace MovementRecorder.Playback.Runtime
         public void Complete()
         {
             if (!_ready || _exiting) return;
-            Pause(false); _session.SetPhase(ReplayPhase.Completed); Message = "再生が終了しました。前へ戻して再生できます。"; ShowPanel();
+            Pause(false); _session.SetPhase(ReplayPhase.Completed); Message = "Playback finished. Seek back to play again."; ShowPanel();
         }
         public bool BeforeSaberUpdate()
         {
@@ -302,7 +302,7 @@ namespace MovementRecorder.Playback.Runtime
             if (!_interaction) return;
             bool resume = _wasPlaying; _interaction = false; _wasPlaying = false;
             _session.SetPhase(_audio.songTime >= EndTime ? ReplayPhase.Completed : ReplayPhase.Paused);
-            Message = "シーク後のスコアは、この位置からの区間で計算します。";
+            Message = "After seeking, the score is calculated from this position.";
             if (resume) Resume();
         }
         public void RemoveExpiredNote(float time) { _seek?.Segment.RemoveExpiredNote(time); }

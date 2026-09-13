@@ -11,7 +11,7 @@ namespace MovementRecorder.Playback.Runtime
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (inactiveParent == null || inactiveParent.gameObject.activeInHierarchy)
-                throw new InvalidOperationException("鑑賞カメラの複製先は非アクティブである必要があります。");
+                throw new InvalidOperationException("The target for the spectator camera clone must be inactive.");
 
             // Suppress Awake/OnEnable at Instantiate, before any provider can register the clone.
             var camera = UnityEngine.Object.Instantiate(source, inactiveParent, false);
@@ -35,9 +35,9 @@ namespace MovementRecorder.Playback.Runtime
                 while (pending.Count > 0)
                 {
                     var next = pending.FirstOrDefault(candidate => !pending.Any(other => other != candidate && Requires(other, candidate)));
-                    if (next == null) throw new InvalidOperationException("鑑賞カメラの不要コンポーネントに循環依存があります。");
+                    if (next == null) throw new InvalidOperationException("Unneeded spectator camera components have circular dependencies.");
                     UnityEngine.Object.DestroyImmediate(next);
-                    if (next != null) throw new InvalidOperationException("鑑賞カメラの不要コンポーネントを除去できません。");
+                    if (next != null) throw new InvalidOperationException("Cannot remove unneeded spectator camera components.");
                     pending.Remove(next);
                 }
 

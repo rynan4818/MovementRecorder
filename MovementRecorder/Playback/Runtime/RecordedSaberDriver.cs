@@ -26,24 +26,24 @@ namespace MovementRecorder.Playback.Runtime
         {
             _clip = clip;
             _hands = new[] { Bind(manager.leftSaber, profile.LeftAnchor, plan), Bind(manager.rightSaber, profile.RightAnchor, plan) };
-            if (_hands[0].Track == _hands[1].Track) throw new InvalidOperationException("左右のセイバーには別々の記録が必要です。");
+            if (_hands[0].Track == _hands[1].Track) throw new InvalidOperationException("The left and right sabers need separate recorded tracks.");
             foreach (var hand in _hands)
             {
                 GameAccess.Field(typeof(SaberMovementData), "_data"); GameAccess.Field(typeof(SaberMovementData), "_nextAddIndex");
                 GameAccess.Field(typeof(SaberMovementData), "_validCount"); GameAccess.Field(typeof(SaberMovementData), "_bladeSpeed");
                 GameAccess.Field(typeof(SaberMovementData), "_dataProcessors"); GameAccess.Field(typeof(SaberSwingRatingCounter), "_cutTime");
                 if (!_clip.TryEvaluate(hand.Track, clip.StartTime, out _, out bool active) || !active)
-                    throw new InvalidOperationException("セイバーの先頭姿勢がありません。");
+                    throw new InvalidOperationException("The recording has no initial saber pose.");
             }
         }
         private Hand Bind(Saber saber, string explicitAnchor, ModelBindingPlan plan)
         {
-            if (saber == null) throw new InvalidOperationException("両手セイバーのStandard譜面を選択してください。");
+            if (saber == null) throw new InvalidOperationException("Select a two-saber Standard map.");
             var candidates = Enumerable.Range(0, plan.Sources.Length).Where(i => plan.Types[i] == "Saber" && plan.Sources[i] != null &&
                 (plan.Sources[i] == saber.transform || plan.Sources[i].IsChildOf(saber.transform)));
             if (!string.IsNullOrEmpty(explicitAnchor)) candidates = candidates.Where(i => _clip.Header.objectNames[i] == explicitAnchor);
             int[] roots = candidates.Where(i => !candidates.Any(j => i != j && plan.Sources[i].IsChildOf(plan.Sources[j]))).ToArray();
-            if (roots.Length != 1) throw new InvalidOperationException(saber.saberType + " の固定ルートを一意に決められません。対応設定でセイバーの基準を指定してください。");
+            if (roots.Length != 1) throw new InvalidOperationException("Cannot identify a unique fixed root for " + saber.saberType + ". Select a saber anchor in Model Mapping.");
             Transform anchor = plan.Sources[roots[0]];
             Quaternion inverse = Quaternion.Inverse(saber.transform.rotation);
             return new Hand { Saber = saber, Anchor = anchor, Track = roots[0],
@@ -58,7 +58,7 @@ namespace MovementRecorder.Playback.Runtime
                 Vector3 offset = inverse * (hand.Anchor.position - hand.Saber.transform.position);
                 Quaternion rotation = inverse * hand.Anchor.rotation;
                 if (Vector3.Distance(offset, hand.AnchorPosition) > .001f || Quaternion.Angle(rotation, hand.AnchorRotation) > .1f)
-                    throw new InvalidOperationException("セイバー基準が固定されていません。動く骨ではなくモデルの固定ルートを選択してください。");
+                    throw new InvalidOperationException("The saber anchor is not fixed. Select the model's fixed root instead of a moving bone.");
             }
         }
         public void TakeControl()
@@ -78,7 +78,7 @@ namespace MovementRecorder.Playback.Runtime
         private void Apply(Hand hand, float songTime)
         {
             if (hand.Saber == null || !_clip.TryEvaluate(hand.Track, songTime, out var pose, out bool active) || !active)
-                throw new InvalidOperationException("セイバーの記録がこの時刻で途切れています。");
+                throw new InvalidOperationException("Saber data is missing at this time.");
             Quaternion rotation = new Quaternion(pose.Qx, pose.Qy, pose.Qz, pose.Qw) * Quaternion.Inverse(hand.AnchorRotation);
             Vector3 position = new Vector3(pose.X, pose.Y, pose.Z) - rotation * hand.AnchorPosition;
             hand.Saber.OverridePositionAndRotation(position, rotation);

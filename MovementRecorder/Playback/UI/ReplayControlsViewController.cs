@@ -35,9 +35,9 @@ namespace MovementRecorder.Playback.UI
         [UIValue("binding-settings")] public bool BindingSettings => _bindingSettings;
         [UIValue("playback-controls")] public bool PlaybackControls => !_bindingSettings;
         [UIValue("ready")] public bool Ready => _runtime?.Ready == true;
-        [UIValue("message")] public string Message => _runtime?.Message ?? "準備しています…";
+        [UIValue("message")] public string Message => _runtime?.Message ?? "Preparing…";
         [UIValue("clock")] public string Clock => _runtime == null ? "" : Format(_runtime.TimePosition) + " / " + Format(_runtime.EndTime);
-        [UIValue("pause-label")] public string PauseLabel => _runtime?.Session.Phase == ReplayPhase.Playing ? "一時停止" : "再開";
+        [UIValue("pause-label")] public string PauseLabel => _runtime?.Session.Phase == ReplayPhase.Playing ? "Pause" : "Resume";
         [UIValue("position")] public float Position { get => _runtime?.TimePosition ?? 0; set { if (!_syncSlider) _runtime?.RequestSeek(value); } }
         [UIValue("observer-x")] public float ObserverX { get => _runtime.Session.ObserverX; set { _runtime.Session.ObserverX = value; _runtime.ObserverChanged(); } }
         [UIValue("observer-y")] public float ObserverY { get => _runtime.Session.ObserverY; set { _runtime.Session.ObserverY = value; _runtime.ObserverChanged(); } }
@@ -49,7 +49,7 @@ namespace MovementRecorder.Playback.UI
         [UIValue("track-choices")] public List<object> TrackChoices { get; } = new List<object> { "" };
         [UIValue("track-choice")] public string TrackChoice { get; set; } = "";
         [UIValue("source-path")] public string SourcePath { get; set; } = "";
-        [UIValue("binding-message")] public string BindingMessage { get; private set; } = "記録と同じモデルを普段のMODで読み込んでください。";
+        [UIValue("binding-message")] public string BindingMessage { get; private set; } = "Use your usual mod to load the same model used in the recording.";
         [UIValue("freeze-missing")] public bool FreezeMissing { get => _runtime.Profile?.FreezeMissing == true; set { if (_runtime.Profile != null) _runtime.Profile.FreezeMissing = value; } }
         public void Configure(PlaybackRuntime runtime) { _runtime = runtime; }
         private static string Format(float time) => !Data.Number.IsFinite(time) ? "--:--" :
@@ -104,7 +104,7 @@ namespace MovementRecorder.Playback.UI
             if (!RootChoices.Contains(RootChoice)) RootChoice = RootChoices.FirstOrDefault() as string ?? "";
             if (!SourceChoices.Contains(SourceChoice)) SourceChoice = SourceChoices.FirstOrDefault() as string ?? "";
             if (!TrackChoices.Contains(TrackChoice)) TrackChoice = _runtime.Plan?.Issues.FirstOrDefault()?.RecordedPath ?? TrackChoices.FirstOrDefault() as string ?? "";
-            BindingMessage = _runtime.Plan?.Issues.FirstOrDefault()?.Message ?? "ルート対応またはセイバーの固定基準を選択できます。";
+            BindingMessage = _runtime.Plan?.Issues.FirstOrDefault()?.Message ?? "Choose a root mapping or a fixed saber anchor.";
             foreach (var dropdown in new[] { _roots, _sources, _tracks })
                 if (dropdown != null) { dropdown.UpdateChoices(); dropdown.ReceiveValue(); }
             NotifyBindings();
@@ -121,31 +121,31 @@ namespace MovementRecorder.Playback.UI
             try
             {
                 var roots = _runtime.Resolver.FindSource(SourceChoice);
-                if (roots.Length != 1 || string.IsNullOrEmpty(RootChoice)) throw new InvalidOperationException("対応先のルートを一意に選択してください。");
+                if (roots.Length != 1 || string.IsNullOrEmpty(RootChoice)) throw new InvalidOperationException("Select a single matching target root.");
                 _runtime.Profile.Roots[RootChoice] = SourceChoice;
                 _runtime.Profile.Hierarchies[RootChoice] = SceneModelResolver.HierarchySignature(roots[0]);
-                _runtime.Profile.OmittedRoots.Remove(RootChoice); SaveBinding("ルート対応を保存しました。再確認してください。");
+                _runtime.Profile.OmittedRoots.Remove(RootChoice); SaveBinding("Root mapping saved. Select Recheck.");
             }
             catch (Exception ex) { SaveBinding(ex.Message, false); }
         }
         [UIAction("bind-track")] private void BindTrack()
         {
             if (_runtime.Resolver?.FindSource(SourcePath).Length != 1 || string.IsNullOrEmpty(TrackChoice))
-            { SaveBinding("対応先パスはシーン内の一意なTransformを指定してください。", false); return; }
-            _runtime.Profile.Tracks[TrackChoice] = SourcePath; SaveBinding("個別の対応を保存しました。再確認してください。");
+            { SaveBinding("The target path must identify exactly one Transform in the scene.", false); return; }
+            _runtime.Profile.Tracks[TrackChoice] = SourcePath; SaveBinding("Object mapping saved. Select Recheck.");
         }
-        [UIAction("left-anchor")] private void LeftAnchor() { _runtime.Profile.LeftAnchor = TrackChoice; SaveBinding("左セイバーの固定基準を保存しました。"); }
-        [UIAction("right-anchor")] private void RightAnchor() { _runtime.Profile.RightAnchor = TrackChoice; SaveBinding("右セイバーの固定基準を保存しました。"); }
+        [UIAction("left-anchor")] private void LeftAnchor() { _runtime.Profile.LeftAnchor = TrackChoice; SaveBinding("Left saber anchor saved."); }
+        [UIAction("right-anchor")] private void RightAnchor() { _runtime.Profile.RightAnchor = TrackChoice; SaveBinding("Right saber anchor saved."); }
         [UIAction("omit-root")] private void OmitRoot()
         {
             if (string.IsNullOrEmpty(RootChoice)) return;
             if (!_runtime.Profile.OmittedRoots.Contains(RootChoice)) _runtime.Profile.OmittedRoots.Add(RootChoice);
-            SaveBinding("このルートを省略します。セイバーの記録は省略できません。");
+            SaveBinding("This root will be skipped. Saber recordings cannot be skipped.");
         }
         [UIAction("reset-binding")] private void ResetBinding()
         {
             _runtime.Profile.Roots.Clear(); _runtime.Profile.Tracks.Clear(); _runtime.Profile.Hierarchies.Clear(); _runtime.Profile.OmittedRoots.Clear();
-            _runtime.Profile.LeftAnchor = _runtime.Profile.RightAnchor = null; SaveBinding("対応を自動設定に戻しました。");
+            _runtime.Profile.LeftAnchor = _runtime.Profile.RightAnchor = null; SaveBinding("Automatic mapping restored.");
         }
         private void SaveBinding(string message, bool save = true)
         { if (save) _runtime.SaveProfile(); BindingMessage = message; NotifyPropertyChanged(nameof(BindingMessage)); }

@@ -70,7 +70,7 @@ namespace MovementRecorder.Playback.Models
             _clip = clip;
             _paths = Resources.FindObjectsOfTypeAll<Transform>()
                 .Where(t => t != null && t.gameObject.scene.IsValid() && t.gameObject.scene.isLoaded && !IsReplayObject(t)).ToDictionary(t => t, PathOf);
-            if (_paths.Count > 100000) throw new InvalidOperationException("シーンのモデル数が探索上限を超えています。");
+            if (_paths.Count > 100000) throw new InvalidOperationException("The scene exceeds the model search limit.");
         }
         public static string PathOf(Transform transform)
         {
@@ -158,7 +158,7 @@ namespace MovementRecorder.Playback.Models
                     candidates = FindSource(trackOverride);
                 else if (changedRoots.Contains(root))
                 {
-                    issues.Add(new BindingIssue { Root = root, RecordedPath = name, Message = "保存した対応先の階層が変わりました。ルートを選び直してください。" }); continue;
+                    issues.Add(new BindingIssue { Root = root, RecordedPath = name, Message = "The saved target hierarchy has changed. Select the root again." }); continue;
                 }
                 else if (manualRoots.TryGetValue(root, out var manual))
                     candidates = manual.TryGetValue(Normalize(name.Substring(root.Length)), out var manualMatches) ? manualMatches : new Transform[0];
@@ -171,10 +171,10 @@ namespace MovementRecorder.Playback.Models
                 else candidates = new Transform[0];
                 if (candidates.Length == 1) sources[i] = candidates[0];
                 else issues.Add(new BindingIssue { Root = root, RecordedPath = name,
-                    Message = candidates.Length == 0 ? "対応するモデルが見つかりません。" : "対応するモデルが複数あります。" });
+                    Message = candidates.Length == 0 ? "No matching model found." : "Multiple matching models found." });
             }
             foreach (var collision in sources.Select((t, i) => new { t, i }).Where(x => x.t != null).GroupBy(x => x.t).Where(g => g.Count() > 1))
-                foreach (var item in collision) issues.Add(new BindingIssue { RecordedPath = names[item.i], Root = recordedRoots.First(r => Below(names[item.i], r)), Message = "複数の記録が同じTransformに対応しています。" });
+                foreach (var item in collision) issues.Add(new BindingIssue { RecordedPath = names[item.i], Root = recordedRoots.First(r => Below(names[item.i], r)), Message = "Multiple recorded objects map to the same Transform." });
             // Saber tracks locate fixed anchors for the game's live sabers; they are not visual clones.
             var mapped = new HashSet<Transform>(sources.Where((t, i) => t != null && types[i] != "Saber"));
             var cloneRoots = mapped.Where(t => !Ancestors(t).Any(mapped.Contains)).ToArray();

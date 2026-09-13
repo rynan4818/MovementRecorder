@@ -41,11 +41,11 @@ namespace MovementRecorder.Playback.Data
             {
                 ReadHeader(reader, path, out var header, out var metadata);
                 if (expected != null && !metadata.SameSource(expected))
-                    throw new IOException("記録ファイルが更新されました。一覧を更新して選び直してください。");
-                if (header.recordCount == 0) throw new InvalidDataException("記録フレームがありません。");
+                    throw new IOException("The recording file has changed. Refresh the list and select it again.");
+                if (header.recordCount == 0) throw new InvalidDataException("The recording contains no frames.");
                 long size = checked((long)header.recordCount * FrameBytes(header.objectCount));
                 if (memoryBudget < 0 || size + 32L * 1024 * 1024 > memoryBudget || (long)header.recordCount * header.objectCount > int.MaxValue)
-                    throw new InvalidDataException("記録データが再生用メモリの上限を超えています。");
+                    throw new InvalidDataException("The recording exceeds the playback memory limit.");
                 token.ThrowIfCancellationRequested();
                 var times = new float[header.recordCount];
                 var poses = new RecordedPose[checked(header.recordCount * header.objectCount)];
@@ -57,20 +57,20 @@ namespace MovementRecorder.Playback.Data
                     token.ThrowIfCancellationRequested();
                     float time = times[frame] = reader.ReadSingle();
                     if (!Number.IsFinite(time) || (frame > 0 && time < times[frame - 1]))
-                        throw new InvalidDataException("記録の曲時刻が不正、または逆行しています。");
+                        throw new InvalidDataException("Recorded song timestamps are invalid or out of order.");
                     for (int track = 0; track < header.objectCount; track++)
                     {
                         var pose = new RecordedPose { X = reader.ReadSingle(), Y = reader.ReadSingle(), Z = reader.ReadSingle(),
                             Qx = reader.ReadSingle(), Qy = reader.ReadSingle(), Qz = reader.ReadSingle(), Qw = reader.ReadSingle() };
                         if (!pose.IsFinite || (time < missing[track] && !pose.NormalizeRotation()))
-                            throw new InvalidDataException($"姿勢データが不正です（フレーム {frame}、対象 {track}）。");
+                            throw new InvalidDataException($"Invalid pose data (frame {frame}, object {track}).");
                         poses[frame * header.objectCount + track] = pose;
                     }
                 }
                 metadata.StartTime = times[0]; metadata.EndTime = times[times.Length - 1];
                 foreach (var item in header.recordNullObjects ?? Enumerable.Empty<NUllObject>())
                     if (item.songTime < metadata.StartTime || item.songTime > metadata.EndTime)
-                        throw new InvalidDataException("欠損イベントの時刻が記録範囲外です。");
+                        throw new InvalidDataException("A missing-object event is outside the recording's time range.");
                 return new MovementClip(header, metadata, times, poses, missing);
             }
         }
@@ -80,50 +80,50 @@ namespace MovementRecorder.Playback.Data
         private static void ValidateTimes(float first, float last)
         {
             if (!Number.IsFinite(first) || !Number.IsFinite(last) || last < first)
-                throw new InvalidDataException("記録範囲の曲時刻が不正です。");
+                throw new InvalidDataException("The recording's song time range is invalid.");
         }
 
         private static void ReadHeader(BinaryReader reader, string path, out MovementJson header, out MovementFileMetadata metadata)
         {
             int length = ReadStringLength(reader);
             byte[] bytes = reader.ReadBytes(length);
-            if (bytes.Length != length) throw new EndOfStreamException("メタデータが途中で切れています。");
+            if (bytes.Length != length) throw new EndOfStreamException("The metadata is truncated.");
             JObject json;
             using (var text = new StringReader(Utf8.GetString(bytes)))
             using (var jsonReader = new JsonTextReader(text) { MaxDepth = 32, DateParseHandling = DateParseHandling.None })
             {
                 json = JObject.Load(jsonReader);
-                while (jsonReader.Read()) if (jsonReader.TokenType != JsonToken.Comment) throw new InvalidDataException("メタデータの末尾に余分な内容があります。");
+                while (jsonReader.Read()) if (jsonReader.TokenType != JsonToken.Comment) throw new InvalidDataException("The metadata has unexpected trailing content.");
             }
             header = json.ToObject<MovementJson>(new JsonSerializer { TypeNameHandling = TypeNameHandling.None });
             if (header == null || header.objectCount <= 0 || header.objectCount > 32768 || header.recordCount < 0 ||
                 header.objectNames == null || header.objectScales == null || header.objectNames.Count != header.objectCount || header.objectScales.Count != header.objectCount)
-                throw new InvalidDataException("記録の対象件数・スケール・フレーム数が不正です。");
+                throw new InvalidDataException("The recording's object count, scales, or frame count are invalid.");
             if (reader.BaseStream.Length != checked(reader.BaseStream.Position + (long)header.recordCount * FrameBytes(header.objectCount)))
-                throw new InvalidDataException("記録ファイルの長さとヘッダーが一致しません。保存途中または未対応の形式です。");
+                throw new InvalidDataException("The file size does not match the header. The recording is incomplete or uses an unsupported format.");
             foreach (string name in header.objectNames)
-                if (string.IsNullOrEmpty(name) || name.Length > 8192) throw new InvalidDataException("記録対象のパスが不正です。");
+                if (string.IsNullOrEmpty(name) || name.Length > 8192) throw new InvalidDataException("A recorded object's path is invalid.");
             foreach (var scale in header.objectScales)
                 if (scale == null || !Number.IsFinite(scale.x) || !Number.IsFinite(scale.y) || !Number.IsFinite(scale.z))
-                    throw new InvalidDataException("記録の初期スケールが不正です。");
-            if (header.Settings == null || header.Settings.Count > 64) throw new InvalidDataException("記録のモデル設定が不正です。");
+                    throw new InvalidDataException("A recorded initial scale is invalid.");
+            if (header.Settings == null || header.Settings.Count > 64) throw new InvalidDataException("The recorded model settings are invalid.");
             foreach (var setting in header.Settings)
             {
-                if (setting == null) throw new InvalidDataException("空のモデル設定があります。");
+                if (setting == null) throw new InvalidDataException("A model settings entry is empty.");
                 foreach (var patterns in new[] { setting.topObjectStrings, setting.searchStirngs, setting.exclusionStrings })
                     if (patterns != null && (patterns.Count > 128 || patterns.Any(p => p == null || p.Length > 2048)))
-                        throw new InvalidDataException("モデルの検索設定が上限を超えています。");
-                if (setting.rescaleString != null && setting.rescaleString.Length > 2048) throw new InvalidDataException("ルート検索設定が長すぎます。");
+                        throw new InvalidDataException("The model search settings exceed the limit.");
+                if (setting.rescaleString != null && setting.rescaleString.Length > 2048) throw new InvalidDataException("The root search pattern is too long.");
             }
             foreach (var item in header.recordNullObjects ?? Enumerable.Empty<NUllObject>())
                 if (item == null || item.objIndex < 0 || item.objIndex >= header.objectCount || !Number.IsFinite(item.songTime))
-                    throw new InvalidDataException("対象の欠損イベントが不正です。");
+                    throw new InvalidDataException("A missing-object event is invalid.");
             int? difficulty = ChartIdentity.Difficulty(header.difficulty);
             if (json.TryGetValue("difficultyNum", out var number) && number.Type != JTokenType.Null)
             {
                 int value = number.Value<int>();
                 if (value < 0 || value > 4 || (difficulty.HasValue && value != difficulty))
-                    throw new InvalidDataException("記録の難易度表記が一致しません。");
+                    throw new InvalidDataException("The recording's difficulty labels do not match.");
                 difficulty = value;
             }
             string fullPath = System.IO.Path.GetFullPath(path);
@@ -143,15 +143,15 @@ namespace MovementRecorder.Playback.Data
             for (int i = 0; i < 5; i++)
             {
                 byte value = reader.ReadByte();
-                if (i == 4 && (value & 0xf0) != 0) throw new InvalidDataException("メタデータの長さが不正です。");
+                if (i == 4 && (value & 0xf0) != 0) throw new InvalidDataException("The metadata length is invalid.");
                 length |= (uint)(value & 0x7f) << (7 * i);
                 if ((value & 0x80) == 0)
                 {
-                    if (length == 0 || length > MaxHeaderBytes) throw new InvalidDataException("メタデータのサイズが上限を超えています。");
+                    if (length == 0 || length > MaxHeaderBytes) throw new InvalidDataException("The metadata exceeds the size limit.");
                     return (int)length;
                 }
             }
-            throw new InvalidDataException("メタデータの長さが不正です。");
+            throw new InvalidDataException("The metadata length is invalid.");
         }
     }
 }

@@ -37,7 +37,7 @@ namespace MovementRecorder.Playback.UI
         public MovementFileMetadata Selected { get; private set; }
         public MovementFileMetadata[] Files { get; private set; } = new MovementFileMetadata[0];
         public HeadDistanceResult Distances { get; private set; } = new HeadDistanceResult();
-        public string Status { get; private set; } = "記録ファイルを選択してください。";
+        public string Status { get; private set; } = "Select a recording file.";
         public bool Busy { get; private set; }
         public string CacheDirectory { get; private set; }
         public string RecordDirectory { get; private set; }
@@ -48,7 +48,7 @@ namespace MovementRecorder.Playback.UI
         public ReplaySession Session => _session;
         private string ChartScope => _chart == null ? "" : _chart.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName + " / " +
             (_chart.difficulty == BeatmapDifficulty.ExpertPlus ? "Expert+" : _chart.difficulty.ToString());
-        public string ChartText => _chart == null ? "Soloで曲と難易度を選択してください。" :
+        public string ChartText => _chart == null ? "Select a song and difficulty in Solo." :
             _chart.level.songName + " / " + ChartScope;
 
         public ReplayMenuService(ReplaySession session, RecordData record, ReplaySaveGuards guards,
@@ -109,7 +109,7 @@ namespace MovementRecorder.Playback.UI
             if (key == _chartKey) return;
             CancelLoad(); CancelScan(); _chartKey = key;
             Selected = null; Files = new MovementFileMetadata[0]; Distances = new HeadDistanceResult();
-            Status = chart == null ? "Soloで曲と難易度を選択してください。" : "記録ファイルを選択してください。";
+            Status = chart == null ? "Select a song and difficulty in Solo." : "Select a recording file.";
             Notify();
         }
         public void OpenMenu()
@@ -132,7 +132,7 @@ namespace MovementRecorder.Playback.UI
             if (!CanEdit || _chart == null) return;
             CancelScan(); var cancellation = _scanCancellation = new CancellationTokenSource(); var token = cancellation.Token; int generation = ++_scanGeneration;
             var folders = Folders().ToArray(); string key = _chartKey;
-            Status = "記録ファイルを確認しています…"; Notify();
+            Status = "Scanning recordings…"; Notify();
             try
             {
                 var catalog = await _catalog;
@@ -142,13 +142,13 @@ namespace MovementRecorder.Playback.UI
                 Files = snapshot.FilesForChart(folders, key);
                 Distances = distances;
                 if (Selected != null) Selected = Files.FirstOrDefault(f => f.SameSource(Selected));
-                Status = Files.Length == 0 ? ChartScope + " の記録は見つかりません。" : ChartScope + ": " + Files.Length + " 件の記録。スコア・履歴は保存しません。";
-                if (snapshot.Warnings.Length > 0) Status += "\n一部のフォルダを確認できませんでした。";
+                Status = Files.Length == 0 ? "No recordings found for " + ChartScope + "." : ChartScope + ": " + Files.Length + " recordings. Scores and play history are not saved.";
+                if (snapshot.Warnings.Length > 0) Status += "\nSome folders could not be scanned.";
                 Plugin.Log?.Debug($"Replay catalog: {_chart.level.levelID}, {ChartScope}, matches={Files.Length}, files={snapshot.Files.Length}, headers={snapshot.HeadersRead}, cache={snapshot.CacheHits}");
                 Notify();
             }
             catch (OperationCanceledException) { }
-            catch (Exception ex) { if (generation == _scanGeneration) { Status = "一覧を更新できません: " + ex.Message; Notify(); } Plugin.Log?.Warn(ex.ToString()); }
+            catch (Exception ex) { if (generation == _scanGeneration) { Status = "Cannot refresh the list: " + ex.Message; Notify(); } Plugin.Log?.Warn(ex.ToString()); }
         }
         public void SelectFile(int index)
         {
@@ -168,25 +168,25 @@ namespace MovementRecorder.Playback.UI
             bool showSourceAvatar = PluginConfig.Instance.showReplaySourceAvatar;
             bool offsetSourceAvatar = PluginConfig.Instance.offsetReplaySourceAvatarWithHmd;
             _session.LoadObserverPosition();
-            Busy = true; Status = "記録を読み込んでいます…"; Notify();
+            Busy = true; Status = "Loading recording…"; Notify();
             try
             {
                 if (chart.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName != "Standard")
-                    throw new InvalidOperationException("初期版は両手セイバーのStandard譜面に対応しています。");
+                    throw new InvalidOperationException("This version supports two-saber Standard maps only.");
                 var requirements = SongCore.Collections.RetrieveDifficultyData(chart)?.additionalDifficultyData?._requirements;
                 if (requirements?.Length > 0)
-                    throw new InvalidOperationException("必須拡張がある譜面は初期版の対象外です: " + string.Join(", ", requirements));
+                    throw new InvalidOperationException("This version does not support maps with required extensions: " + string.Join(", ", requirements));
                 _guards.Prepare(); ReplayRuntimeHooks.Prepare();
                 if (_record._saveTask != null && !_record._saveTask.IsCompleted)
-                { Status = "直前の記録の保存完了を待っています…"; Notify(); await WaitWithCancellation(_record._saveTask, token); }
+                { Status = "Waiting for the previous recording to finish saving…"; Notify(); await WaitWithCancellation(_record._saveTask, token); }
                 token.ThrowIfCancellationRequested();
                 long retained = _record._recordData == null ? 0 : (long)_record._recordData.Length * (16L + _record._transformSize * 28L);
                 var clip = await Task.Run(() => new MovementFileReader().ReadClip(selected.Path, selected,
                     MovementFileReader.DefaultMemoryBudget - retained, token), token);
                 token.ThrowIfCancellationRequested();
                 if (_disposed || generation != _loadGeneration || _chartKey != key) return;
-                if (!clip.Header.Settings.Any(s => s.type == "Saber")) throw new InvalidOperationException("左右のセイバーを記録したファイルを選択してください。");
-                Status = "リプレイを開始します…"; Notify();
+                if (!clip.Header.Settings.Any(s => s.type == "Saber")) throw new InvalidOperationException("Select a recording that includes both sabers.");
+                Status = "Starting replay…"; Notify();
                 // The underlying chart view is inactive while the menu is presented.
                 // Read it again only after dismissal, and keep cancellation valid through the animation.
                 await WaitWithCancellation(_flow.CloseForReplay(), token);
@@ -195,28 +195,28 @@ namespace MovementRecorder.Playback.UI
                 var current = CurrentChart();
                 if (_chartKey != key || KeyOf(current) != key)
                 {
-                    SetChart(current); Status = "選択中の譜面が変わりました。記録を選び直してください。";
+                    SetChart(current); Status = "The selected map has changed. Select a recording again.";
                     _flow.Show(); Notify(); return;
                 }
                 if (Selected == null || !selected.SameSource(Selected) || !selected.MatchesAttributes(new FileInfo(selected.Path)))
                 {
                     Selected = null;
-                    throw new InvalidOperationException("選択した記録が変更されました。一覧を更新して選び直してください。");
+                    throw new InvalidOperationException("The selected recording has changed. Refresh the list and select it again.");
                 }
                 _guards.Prepare();
                 _session.Begin(clip, showSourceAvatar, offsetSourceAvatar);
                 var modifiers = _setup.gameplayModifiers.CopyWith(noFailOn0Energy: _session.NoFail, songSpeed: GameplayModifiers.SongSpeed.Normal);
                 _transitions.StartStandardLevel(ReplaySession.GameMode, chart, chart.level, _setup.environmentOverrideSettings,
                     _setup.colorSchemesSettings.GetOverrideColorScheme(), modifiers, _setup.playerSettings.CopyWith(autoRestart: false),
-                    new PracticeSettings { startSongTime = 0, songSpeedMul = 1 }, "曲選択へ", false, true, null,
-                    (setup, result) => { _session.Finish(); Status = "リプレイが終了しました。スコア・プレイ履歴は保存していません。"; Notify(); }, null);
+                    new PracticeSettings { startSongTime = 0, songSpeedMul = 1 }, "Song Selection", false, true, null,
+                    (setup, result) => { _session.Finish(); Status = "Replay finished. Scores and play history were not saved."; Notify(); }, null);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
                 if (generation == _loadGeneration)
                 {
-                    Status = "リプレイを開始できません: " + ex.Message;
+                    Status = "Cannot start replay: " + ex.Message;
                     if (ex is IOException || ex is InvalidDataException || ex is UnauthorizedAccessException) Selected = null;
                     if (_session.IsActive) _session.Finish();
                     if (!_disposed && _flow?.Opened == false) _flow.Show();
@@ -240,7 +240,7 @@ namespace MovementRecorder.Playback.UI
         {
             bool wasBusy = Busy;
             _loadGeneration++; _loadCancellation?.Cancel(); _loadCancellation?.Dispose(); _loadCancellation = null; Busy = false;
-            if (wasBusy) { Status = "読み込みを中止しました。"; Notify(); }
+            if (wasBusy) { Status = "Loading canceled."; Notify(); }
         }
         private void CancelScan() { _scanGeneration++; _scanCancellation?.Cancel(); _scanCancellation?.Dispose(); _scanCancellation = null; }
         private void Notify() { if (!_disposed) Changed?.Invoke(); }

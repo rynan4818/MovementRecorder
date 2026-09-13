@@ -345,7 +345,7 @@ namespace MovementRecorder.Tests
         [Fact] public void MenuControllerCopyRejectsSabersAndCleansUpPartialInitialization()
         {
             var scene = Scene(false); scene.right.gameObject.AddComponent<Saber>();
-            Assert.Contains("メニュー用コントローラー", Assert.Throws<InvalidOperationException>(() =>
+            Assert.Contains("menu controller", Assert.Throws<InvalidOperationException>(() =>
                 new SpectatorRig(new ReplaySession(), scene.player, scene.container)).Message);
             Assert.True(scene.main.camera.enabled); Assert.Same(scene.previous, EventSystem.current);
             Assert.False(scene.left.Destroyed); Assert.False(scene.right.Destroyed);

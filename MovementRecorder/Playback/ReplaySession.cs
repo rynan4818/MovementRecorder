@@ -74,7 +74,7 @@ namespace MovementRecorder.Playback
         public void SetPhase(ReplayPhase phase) { Phase = phase; }
         public void Begin(MovementClip clip, bool showSourceAvatar = false, bool offsetSourceAvatarWithHmd = false)
         {
-            if (IsActive) throw new InvalidOperationException("リプレイは既に実行中です。");
+            if (IsActive) throw new InvalidOperationException("A replay is already running.");
             ShowSourceAvatar = showSourceAvatar;
             OffsetSourceAvatarWithHmd = offsetSourceAvatarWithHmd;
             Clip = clip; Error = null; Id = Guid.NewGuid(); Phase = ReplayPhase.Starting; GameplaySceneHandle = DestroyedAtFrame = null;
@@ -82,7 +82,7 @@ namespace MovementRecorder.Playback
         }
         public void DisableSubmission(Submission submission)
         {
-            _submission = submission ?? throw new InvalidOperationException("スコア送信の抑止を準備できません。");
+            _submission = submission ?? throw new InvalidOperationException("Cannot disable score submission.");
             _ticket = submission.DisableScoreSubmission("MovementRecorder", "Replay");
         }
         public void Fail(string message) { Error = message; Phase = ReplayPhase.Paused; }

@@ -50,8 +50,8 @@ namespace MovementRecorder.Playback.Runtime
 
         public void Seek(float target, Action<float> applyModels, Action<float> prepareSabers)
         {
-            if (IsSeeking) throw new InvalidOperationException("シークが重複しています。");
-            if (!_audio.isReady || float.IsNaN(target) || float.IsInfinity(target)) throw new InvalidOperationException("曲の時刻を変更できません。");
+            if (IsSeeking) throw new InvalidOperationException("A seek is already in progress.");
+            if (!_audio.isReady || float.IsNaN(target) || float.IsInfinity(target)) throw new InvalidOperationException("Cannot change the song position.");
             IsSeeking = true; MovementReplay.NotifySeek(MovementReplay.SessionId, target, true);
             var randomState = UnityEngine.Random.state;
             try
@@ -125,7 +125,7 @@ namespace MovementRecorder.Playback.Runtime
                 item.Pause(false);
                 Type type = item is NoteController ? typeof(NoteController) : item is ObstacleController ? typeof(ObstacleController) :
                     item is SliderController ? typeof(SliderController) : null;
-                if (type == null) throw new InvalidOperationException("未対応の譜面オブジェクトが残っています。");
+                if (type == null) throw new InvalidOperationException("Unsupported map objects remain in the scene.");
                 _despawn[type].Invoke(_objects, new object[] { item });
             }
         }

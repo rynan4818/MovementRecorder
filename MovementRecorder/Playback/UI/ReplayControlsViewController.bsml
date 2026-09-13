@@ -1,54 +1,54 @@
 <bg>
   <vertical spacing="1" pad="2">
     <horizontal pref-height="6">
-      <text text="MovementRecorder リプレイ" font-size="4"/>
+      <text text="MovementRecorder Replay" font-size="4"/>
       <text text="~clock" font-size="4" align="Right" pref-width="30"/>
     </horizontal>
     <text text="~message" font-size="2.8" pref-height="9"/>
     <vertical active="~playback-controls" spacing="1">
       <horizontal pref-height="8" spacing="1">
         <button text="~pause-label" on-click="pause-resume" interactable="~ready"/>
-        <button text="先頭へ" on-click="start" interactable="~ready"/>
-        <button text="−5秒" on-click="back" interactable="~ready"/>
-        <button text="＋5秒" on-click="forward" interactable="~ready"/>
+        <button text="Back to Start" on-click="start" interactable="~ready"/>
+        <button text="−5 s" on-click="back" interactable="~ready"/>
+        <button text="+5 s" on-click="forward" interactable="~ready"/>
       </horizontal>
-      <slider-setting id="timeline" text="再生位置" value="position" min="0" max="3600" increment="0.1" formatter="format-time" apply-on-change="true" interactable="~ready" pref-height="8"/>
+      <slider-setting id="timeline" text="Playback Position" value="position" min="0" max="3600" increment="0.1" formatter="format-time" apply-on-change="true" interactable="~ready" pref-height="8"/>
       <horizontal pref-height="8">
-        <increment-setting text="左右 (m)" value="observer-x" increment="0.1" min="-5" max="5" apply-on-change="true" pref-width="60"/>
-        <increment-setting text="上下 (m)" value="observer-y" increment="0.1" min="-3" max="3" apply-on-change="true" pref-width="60"/>
+        <increment-setting text="Left / Right (m)" value="observer-x" increment="0.1" min="-5" max="5" apply-on-change="true" pref-width="60"/>
+        <increment-setting text="Up / Down (m)" value="observer-y" increment="0.1" min="-3" max="3" apply-on-change="true" pref-width="60"/>
       </horizontal>
       <horizontal pref-height="8">
-        <increment-setting text="前後 (m)" value="observer-z" increment="0.1" min="-8" max="5" apply-on-change="true" pref-width="60"/>
-        <button text="モデルの対応設定" on-click="binding" pref-width="58"/>
+        <increment-setting text="Forward / Back (m)" value="observer-z" increment="0.1" min="-8" max="5" apply-on-change="true" pref-width="60"/>
+        <button text="Model Mapping" on-click="binding" pref-width="58"/>
       </horizontal>
-      <text text="スコア・プレイ履歴は保存しません。HDTの距離記録は通常どおりです。" font-size="2.5" pref-height="6"/>
+      <text text="Scores and play history are not saved. HDT tracks distance as usual." font-size="2.5" pref-height="6"/>
     </vertical>
     <vertical active="~binding-settings" pref-height="40">
       <settings-container>
         <text text="~binding-message" font-size="2.8" pref-height="9"/>
-        <dropdown-list-setting id="roots" text="記録ルート" choices="root-choices" value="root-choice" apply-on-change="true"/>
-        <dropdown-list-setting id="sources" text="シーンのルート" choices="source-choices" value="source-choice" apply-on-change="true"/>
+        <dropdown-list-setting id="roots" text="Recorded Root" choices="root-choices" value="root-choice" apply-on-change="true"/>
+        <dropdown-list-setting id="sources" text="Scene Root" choices="source-choices" value="source-choice" apply-on-change="true"/>
         <horizontal pref-height="8">
-          <button text="ルート対応を保存" on-click="bind-root"/>
-          <button text="このルートを省略" on-click="omit-root"/>
+          <button text="Save Root Mapping" on-click="bind-root"/>
+          <button text="Skip This Root" on-click="omit-root"/>
         </horizontal>
-        <dropdown-list-setting id="tracks" text="個別の記録対象" choices="track-choices" value="track-choice" apply-on-change="true"/>
-        <string-setting text="対応先のフルパス" value="source-path" apply-on-change="true"/>
-        <button text="個別の対応を保存" on-click="bind-track" pref-height="8"/>
+        <dropdown-list-setting id="tracks" text="Recorded Object" choices="track-choices" value="track-choice" apply-on-change="true"/>
+        <string-setting text="Target Full Path" value="source-path" apply-on-change="true"/>
+        <button text="Save Object Mapping" on-click="bind-track" pref-height="8"/>
         <horizontal pref-height="8">
-          <button text="左セイバー基準" on-click="left-anchor"/>
-          <button text="右セイバー基準" on-click="right-anchor"/>
+          <button text="Left Saber Anchor" on-click="left-anchor"/>
+          <button text="Right Saber Anchor" on-click="right-anchor"/>
         </horizontal>
-        <checkbox-setting text="消失した対象を最後の姿勢で表示" value="freeze-missing" apply-on-change="true"/>
+        <checkbox-setting text="Keep Missing Objects at Last Pose" value="freeze-missing" apply-on-change="true"/>
         <horizontal pref-height="8">
-          <button text="自動設定に戻す" on-click="reset-binding"/>
-          <button text="再確認" on-click="retry"/>
-          <button text="操作に戻る" on-click="close-binding"/>
+          <button text="Reset to Auto" on-click="reset-binding"/>
+          <button text="Recheck" on-click="retry"/>
+          <button text="Back to Controls" on-click="close-binding"/>
         </horizontal>
       </settings-container>
     </vertical>
     <horizontal spacing="2" pref-height="8">
-      <button text="曲選択へ戻る" on-click="exit"/>
+      <button text="Back to Song Selection" on-click="exit"/>
     </horizontal>
   </vertical>
 </bg>

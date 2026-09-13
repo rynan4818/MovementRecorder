@@ -24,7 +24,7 @@ namespace MovementRecorder.Playback.Runtime
             var sourcePointer = GameAccess.Get<VRPointer>(source, "_vrPointer");
             _baseModule = source; _basePointer = sourcePointer;
             _baseEvents = source.GetComponent<EventSystem>();
-            if (sourcePointer == null || _baseEvents == null) throw new InvalidOperationException("ゲームのメニュー入力を取得できません。");
+            if (sourcePointer == null || _baseEvents == null) throw new InvalidOperationException("Cannot access the game's menu input.");
             _root = new GameObject("Spectator Menu Input"); _root.SetActive(false);
             _root.transform.SetParent(trackingOrigin, false);
             try
@@ -51,7 +51,7 @@ namespace MovementRecorder.Playback.Runtime
         private VRController CopyController(VRController original, DiContainer container)
         {
             if (original == null || original.GetComponentsInChildren<Saber>(true).Length != 0)
-                throw new InvalidOperationException("セイバーを含まないメニュー用コントローラーが必要です。");
+                throw new InvalidOperationException("A menu controller without a saber is required.");
             var copy = UnityEngine.Object.Instantiate(original, _root.transform, false);
             copy.name = "Spectator Menu " + original.node;
             copy.gameObject.SetActive(true); copy.enabled = true;

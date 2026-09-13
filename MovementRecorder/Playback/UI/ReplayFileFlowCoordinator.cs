@@ -26,7 +26,7 @@ namespace MovementRecorder.Playback.UI
         {
             if (firstActivation)
             {
-                SetTitle("MovementRecorder リプレイ"); showBackButton = true;
+                SetTitle("MovementRecorder Replay"); showBackButton = true;
                 _view = BeatSaberUI.CreateViewController<ReplayFileViewController>(); _view.Configure(_service);
                 ProvideInitialViewControllers(_view);
             }
@@ -42,7 +42,7 @@ namespace MovementRecorder.Playback.UI
         }
         public Task CloseForReplay()
         {
-            if (!Opened || _closing) throw new InvalidOperationException("リプレイメニューを閉じられません。");
+            if (!Opened || _closing) throw new InvalidOperationException("Cannot close the replay menu.");
             return CloseCore();
         }
         private Task CloseCore()

@@ -122,6 +122,27 @@ namespace MovementRecorder.Tests
             File.Delete(path);
             Assert.Empty((await catalog.ScanAsync(new[] { _directory }, false, CancellationToken.None)).Files);
         }
+        [Fact] public async Task LegacyCatalogErrorsAreReReadInEnglishAndTheUpdatedCacheIsReused()
+        {
+            string path = Fixture(editHeader: j => j["objectCount"] = 7);
+            string cache = Path.Combine(_directory, "Cache"); Directory.CreateDirectory(cache);
+            string cachePath = Path.Combine(cache, "file-metadata-v1.json");
+            var info = new FileInfo(path);
+            const string legacyError = "記録の対象件数・スケール・フレーム数が不正です。";
+            var metadata = new MovementFileMetadata { Path = path, Folder = _directory, Error = legacyError,
+                Length = info.Length, LastWriteUtcTicks = info.LastWriteTimeUtc.Ticks, TransientError = false };
+            File.WriteAllText(cachePath, JsonConvert.SerializeObject(new { Version = 1, ReaderVersion = 1, Files = new[] { metadata } }));
+
+            var refreshed = await new MovementFileCatalog(cache, null).ScanAsync(new[] { _directory }, false, CancellationToken.None);
+            Assert.Equal(1, refreshed.HeadersRead); Assert.Equal(0, refreshed.CacheHits);
+            string error = Assert.Single(refreshed.Files).Error;
+            Assert.Equal("The recording's object count, scales, or frame count are invalid.", error);
+            Assert.DoesNotContain(legacyError, File.ReadAllText(cachePath));
+
+            var reloaded = await new MovementFileCatalog(cache, null).ScanAsync(new[] { _directory }, false, CancellationToken.None);
+            Assert.Equal(0, reloaded.HeadersRead); Assert.Equal(1, reloaded.CacheHits);
+            Assert.Equal(error, Assert.Single(reloaded.Files).Error);
+        }
         [Fact] public void ChartAndFilenameRulesDoNotGuessUnknownInformation()
         {
             Assert.Equal("custom_level_" + new string('A', 40), ChartIdentity.Level("CUSTOM_LEVEL_" + new string('a', 40)));

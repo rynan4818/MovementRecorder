@@ -29,7 +29,7 @@ namespace MovementRecorder.Playback.Compatibility
                     Type launcher = RequireType(assembly, "BeatLeader.Replayer.ReplayerLauncher");
                     var property = AccessTools.Property(launcher, "IsStartedAsReplay");
                     var field = property == null ? AccessTools.Field(launcher, "IsStartedAsReplay") : null;
-                    if (property == null && field == null) throw Unsupported(name, "リプレイ状態");
+                    if (property == null && field == null) throw Unsupported(name, "replay state");
                     _otherReplayChecks.Add(() => (bool)(property != null ? property.GetValue(null, null) : field.GetValue(null)));
                 }
                 else if (name == "ScoreSaber")
@@ -37,7 +37,7 @@ namespace MovementRecorder.Playback.Compatibility
                     Hook(assembly, "ScoreSaber.Features.Replays.Installers.RecordInstaller", "InstallBindings");
                     Hook(assembly, "ScoreSaber.Features.ScoreSubmission.ScoreSubmissionController", "HandleStandardLevelFinished");
                     var registry = RequireType(assembly, "ScoreSaber.Features.Replays.ReplayStateRegistry");
-                    var state = AccessTools.Property(registry, "IsPlaybackEnabled") ?? throw Unsupported(name, "リプレイ状態");
+                    var state = AccessTools.Property(registry, "IsPlaybackEnabled") ?? throw Unsupported(name, "replay state");
                     _otherReplayChecks.Add(() => (bool)state.GetValue(null, null));
                 }
                 else if (name == "SongPlayHistoryContinued" || name == "SongPlayHistory")
@@ -50,15 +50,15 @@ namespace MovementRecorder.Playback.Compatibility
                     Type tracker = RequireType(assembly, "SongPlayHistory.SongPlayTracking.SongPlayTracker");
                     MethodInfo initialize = tracker.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
                         .SingleOrDefault(m => (m.Name == "Initialize" || m.Name.EndsWith(".Initialize", StringComparison.Ordinal)) && m.GetParameters().Length == 0);
-                    Hook(initialize ?? throw Unsupported(name, "履歴の開始"));
+                    Hook(initialize ?? throw Unsupported(name, "history initialization"));
                     Hook(assembly, tracker.FullName, "HandleLevelFinished");
                 }
             }
-            if (_otherReplayChecks.Any(check => check())) throw new InvalidOperationException("他のMODのリプレイが実行中です。終了してから選び直してください。");
+            if (_otherReplayChecks.Any(check => check())) throw new InvalidOperationException("Another mod's replay is running. End it and select a recording again.");
         }
 
         private static Type RequireType(Assembly assembly, string name) => assembly.GetType(name, false) ?? throw Unsupported(assembly.GetName().Name, name);
-        private static Exception Unsupported(string mod, string member) => new InvalidOperationException(mod + " の保存抑止に必要な処理を確認できません: " + member);
+        private static Exception Unsupported(string mod, string member) => new InvalidOperationException("Cannot find the API required to prevent " + mod + " from saving replay results: " + member);
         private void Hook(Assembly assembly, string type, string method)
         {
             var methods = RequireType(assembly, type).GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)

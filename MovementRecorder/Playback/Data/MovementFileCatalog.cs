@@ -23,7 +23,7 @@ namespace MovementRecorder.Playback.Data
         private sealed class CacheFile
         {
             public int Version { get; set; } = 1;
-            public int ReaderVersion { get; set; } = 1;
+            public int ReaderVersion { get; set; } = 2; // Re-read cached Japanese diagnostics for the English UI.
             public List<MovementFileMetadata> Files { get; set; }
         }
 
@@ -37,7 +37,7 @@ namespace MovementRecorder.Playback.Data
         {
             _cachePath = Path.Combine(cacheDirectory, "file-metadata-v1.json"); _log = log;
             var cache = JsonCache.Read<CacheFile>(_cachePath, log);
-            if (cache?.Version != 1 || cache.ReaderVersion != 1 || cache.Files == null) return;
+            if (cache?.Version != 1 || cache.ReaderVersion != 2 || cache.Files == null) return;
             foreach (var file in cache.Files)
             {
                 if (file == null || string.IsNullOrEmpty(file.Path) || string.IsNullOrEmpty(file.Folder)) continue;
@@ -86,7 +86,7 @@ namespace MovementRecorder.Playback.Data
                         headersRead++;
                         updated[path] = _reader.ReadMetadata(path, token);
                     }
-                    catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException ||
+                    catch (Exception ex) when (ex is IOException || ex is InvalidDataException || ex is UnauthorizedAccessException || ex is ArgumentException ||
                         ex is Newtonsoft.Json.JsonException || ex is OverflowException)
                     {
                         var error = new MovementFileMetadata { Path = path, Folder = folder, Error = ex.Message,

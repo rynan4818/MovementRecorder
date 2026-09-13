@@ -38,7 +38,7 @@ namespace MovementRecorder.Playback.Runtime
                 var head = GameAccess.Get<Transform>(player, "_headTransform");
                 if (head != null) _source = head.GetComponent<Camera>() ?? head.GetComponentInChildren<Camera>(true);
             }
-            if (_source == null) throw new InvalidOperationException("実HMDの描画カメラを取得できません。");
+            if (_source == null) throw new InvalidOperationException("Cannot find the live HMD rendering camera.");
             _cameraEnabled = _source.enabled;
             _root = new GameObject(SceneModelResolverName); _root.SetActive(false);
             try
@@ -84,7 +84,7 @@ namespace MovementRecorder.Playback.Runtime
         }
         public void Update()
         {
-            if (_source == null) throw new InvalidOperationException("HMDカメラが消失しました。");
+            if (_source == null) throw new InvalidOperationException("The HMD camera is no longer available.");
             BeforeRender();
             _input?.Update(_view, _fpfc?.Enabled == true);
         }

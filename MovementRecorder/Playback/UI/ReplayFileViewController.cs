@@ -22,7 +22,7 @@ namespace MovementRecorder.Playback.UI
         [UIComponent("row-distance")] private TextMeshProUGUI _distanceText = null;
         private static readonly Color SelectedColor = new Color(102f / 255, 217f / 255, 239f / 255);
         private static readonly Color ErrorColor = new Color(1, 138f / 255, 128f / 255);
-        [UIValue("title")] public string Title => (_selected ? "選択中  " : "") + Label + "  /  " + Detail;
+        [UIValue("title")] public string Title => (_selected ? "Selected  " : "") + Label + "  /  " + Detail;
         public string Detail { get; set; }
         [UIValue("distance")] public string Distance { get; set; }
         public void SetSelected(bool selected)
@@ -54,20 +54,20 @@ namespace MovementRecorder.Playback.UI
         [UIComponent("files")] private CustomCellListTableData _list = null;
         [UIValue("show-files")] public bool ShowFiles => !_settings;
         [UIValue("show-settings")] public bool ShowSettings => _settings;
-        [UIValue("settings-label")] public string SettingsLabel => _settings ? "一覧へ" : "鑑賞設定";
+        [UIValue("settings-label")] public string SettingsLabel => _settings ? "Back to List" : "View Settings";
         [UIValue("rows")] public List<object> Rows { get; } = new List<object>();
         [UIValue("chart")] public string Chart => _service?.ChartText ?? "";
         [UIValue("status")] public string Status => _service?.Status ?? "";
-        [UIValue("selected-file")] public string SelectedFile => _service?.Selected == null ? "記録ファイル未選択" :
-            "選択中: " + Path.GetFileName(_service.Selected.Path);
+        [UIValue("selected-file")] public string SelectedFile => _service?.Selected == null ? "No recording selected" :
+            "Selected: " + Path.GetFileName(_service.Selected.Path);
         [UIValue("selection-color")] public string SelectionColor => _service?.Selected == null ? "#FFFFFF" : "#66D9EF";
-        [UIValue("distance-heading")] public string DistanceHeading => _service?.Distances.Available == true ? "頭の移動距離（参考）" : "";
+        [UIValue("distance-heading")] public string DistanceHeading => _service?.Distances.Available == true ? "Head Travel (Reference)" : "";
         [UIValue("details")] public string Details
         {
             get
             {
-                var file = _service?.Selected; if (file == null) return "一覧から記録を選択してください。";
-                string summary = (file.Error ?? $"{file.FrameCount:N0} フレーム / {file.ObjectCount} 対象 / {file.StartTime:0.0}–{file.EndTime:0.0} 秒\n" + string.Join(", ", file.Groups ?? new string[0]));
+                var file = _service?.Selected; if (file == null) return "Select a recording from the list.";
+                string summary = (file.Error ?? $"{file.FrameCount:N0} frames / {file.ObjectCount} objects / {file.StartTime:0.0}–{file.EndTime:0.0} s\n" + string.Join(", ", file.Groups ?? new string[0]));
                 return summary + (_details ? "\n" + file.Path : "");
             }
         }
@@ -94,7 +94,7 @@ namespace MovementRecorder.Playback.UI
                 {
                     double? distance = _service.DistanceFor(file);
                     Rows.Add(new ReplayFileRow { Label = file.RecordedAtLocal?.ToString("yyyy/MM/dd HH:mm:ss") ?? Path.GetFileName(file.Path), HasError = file.Error != null,
-                        Detail = file.Error != null ? "読込不可: " + file.Error : $"{file.EndTime - file.StartTime:0.0} 秒 / {file.ObjectCount} 対象 / {file.Length / 1048576d:0.0} MiB",
+                        Detail = file.Error != null ? "Cannot load: " + file.Error : $"{file.EndTime - file.StartTime:0.0} s / {file.ObjectCount} objects / {file.Length / 1048576d:0.0} MiB",
                         Distance = distance.HasValue ? distance.Value.ToString("0.0", CultureInfo.CurrentCulture) + " m" : "" });
                 }
                 _list?.tableView.ReloadData();

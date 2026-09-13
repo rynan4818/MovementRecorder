@@ -80,7 +80,7 @@ namespace MovementRecorder.Tests
         {
             var root = new GameObject("OnlyTrail"); var trail = root.AddComponent<TrailRenderer>();
             var error = Assert.Throws<InvalidOperationException>(() => Copy(root));
-            Assert.Contains("再生できるメッシュがありません", error.Message); Assert.False(trail.forceRenderingOff);
+            Assert.Contains("No replayable mesh found", error.Message); Assert.False(trail.forceRenderingOff);
             Assert.DoesNotContain(Resources.FindObjectsOfTypeAll<GameObject>(), o => o != null && o.name == SceneModelResolver.ReplayRootName);
         }
 
@@ -88,7 +88,7 @@ namespace MovementRecorder.Tests
         {
             var root = new GameObject("Saber"); var mesh = Mesh(root); var external = Mesh(new GameObject("External"));
             root.AddComponent<LODGroup>().SetLODs(new[] { new LOD(.5f, new Renderer[] { mesh, external }) });
-            Assert.Contains("LOD参照", Assert.Throws<InvalidOperationException>(() => Copy(root)).Message);
+            Assert.Contains("An LOD reference", Assert.Throws<InvalidOperationException>(() => Copy(root)).Message);
             Assert.False(mesh.forceRenderingOff); Assert.False(external.forceRenderingOff);
             Assert.False(mesh.sharedMaterials[0].Destroyed);
             Assert.DoesNotContain(Resources.FindObjectsOfTypeAll<Material>(), m => m != null && !ReferenceEquals(m, mesh.sharedMaterials[0]) && !ReferenceEquals(m, external.sharedMaterials[0]));

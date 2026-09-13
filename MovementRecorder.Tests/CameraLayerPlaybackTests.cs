@@ -100,7 +100,7 @@ namespace MovementRecorder.Tests
             var source = Inactive("Main"); var camera = source.AddComponent<Camera>();
             source.AddComponent<CycleA>(); source.AddComponent<CycleB>(); source.AddComponent<ActivationProbe>();
             var stage = Inactive("Stage");
-            Assert.Contains("循環依存", Assert.Throws<InvalidOperationException>(() => SpectatorCameraClone.Create(camera, stage.transform)).Message);
+            Assert.Contains("circular dependencies", Assert.Throws<InvalidOperationException>(() => SpectatorCameraClone.Create(camera, stage.transform)).Message);
             Assert.Empty(stage.transform.Children); Assert.Equal(0, ActivationProbe.Starts); Assert.False(camera.Destroyed);
         }
 
