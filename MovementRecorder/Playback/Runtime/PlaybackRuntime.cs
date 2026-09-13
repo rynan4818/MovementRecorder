@@ -131,7 +131,7 @@ namespace MovementRecorder.Playback.Runtime
             {
                 if (EndTime <= StartTime) throw new InvalidOperationException("記録と音声の再生範囲が重なりません。");
                 _driver.TakeControl();
-                _model = new RenderModelClone(_session.Clip, Plan, Profile.FreezeMissing, _driver.SaberRoots);
+                _model = new RenderModelClone(_session.Clip, Plan, Profile.FreezeMissing, _driver.SaberRoots, s => Plugin.Log?.Warn(s));
                 foreach (string skipped in _model.SkippedRenderers) Plugin.Log?.Warn("Replay renderer omitted: " + skipped);
                 Plugin.Log?.Info($"Replay models ready: {Plan.Sources.Count(t => t != null)} tracks, {_model.ModelRootCount} cloned avatar/other roots, 2 live sabers, {StartTime:0.000}–{EndTime:0.000}s");
                 _ready = true; _session.SetPhase(ReplayPhase.Seeking);
@@ -253,7 +253,11 @@ namespace MovementRecorder.Playback.Runtime
         internal void WriteLatePoses()
         {
             if (!_ready || _exiting) return;
-            try { _model.KeepSourcesHidden(); _model.Apply(_audio.songTime); _driver.Apply(_audio.songTime); }
+            try
+            {
+                _model.KeepSourcesHidden(); _model.Apply(_audio.songTime); _driver.Apply(_audio.songTime);
+                _model.SyncLiveExpressions(_session.Phase == ReplayPhase.Playing);
+            }
             catch (Exception ex) { Fail(ex); }
         }
         public void BeginDrag() { _dragging = true; BeginInteraction(); }
@@ -299,13 +303,15 @@ namespace MovementRecorder.Playback.Runtime
         public void Exit()
         {
             if (_exiting) return;
-            Pause(false); HidePanel(); _exiting = true; _session.SetPhase(ReplayPhase.Disposing); _return.ReturnToMenu();
+            Pause(false); HidePanel(); _exiting = true; _model?.StopLiveExpressions();
+            _session.SetPhase(ReplayPhase.Disposing); _return.ReturnToMenu();
         }
         private void Fail(Exception exception)
         {
             if (_exiting) return;
             try { Pause(false); } catch (Exception nested) { Plugin.Log?.Warn(nested.ToString()); }
             _ready = false; _pending = null; _interaction = _dragging = false;
+            _model?.StopLiveExpressions();
             _session.Fail(exception.Message); Message = exception.Message; Plugin.Log?.Error(exception.ToString());
             try { ShowPanel(); _view?.ShowBindings(); }
             catch (Exception uiError)

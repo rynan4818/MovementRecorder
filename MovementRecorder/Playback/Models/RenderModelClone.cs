@@ -17,6 +17,9 @@ namespace MovementRecorder.Playback.Models
         private readonly List<string> _skippedDescriptions = new List<string>();
         private readonly Dictionary<Renderer, bool> _hiddenSources = new Dictionary<Renderer, bool>();
         private readonly Dictionary<Material, Material> _materials = new Dictionary<Material, Material>();
+        private readonly List<BlendShapeBinding> _blendShapes = new List<BlendShapeBinding>();
+        private readonly Dictionary<Animator, AnimatorCullingMode> _animatorCullingModes = new Dictionary<Animator, AnimatorCullingMode>();
+        private readonly Action<string> _warning;
         private readonly MovementClip _clip;
         private readonly Transform[] _tracks;
         private readonly int[] _order;
@@ -24,13 +27,15 @@ namespace MovementRecorder.Playback.Models
         private readonly bool _freezeMissing;
         private readonly Transform[] _liveSaberRoots;
         private bool _disposed;
+        private bool _liveExpressionsStopped;
         public IReadOnlyDictionary<Transform, Transform> Transforms => _transforms;
         public IReadOnlyList<string> SkippedRenderers => _skippedDescriptions;
         public int ModelRootCount { get; }
 
-        public RenderModelClone(MovementClip clip, ModelBindingPlan plan, bool freezeMissing, Transform[] liveSaberRoots = null)
+        public RenderModelClone(MovementClip clip, ModelBindingPlan plan, bool freezeMissing, Transform[] liveSaberRoots = null, Action<string> warning = null)
         {
             _clip = clip; _freezeMissing = freezeMissing;
+            _warning = warning;
             _liveSaberRoots = liveSaberRoots ?? new Transform[0];
             var cloneRoots = plan.CloneRoots.Where(t => !IsLiveSaber(t)).ToArray();
             ModelRootCount = cloneRoots.Length;
@@ -51,9 +56,11 @@ namespace MovementRecorder.Playback.Models
                 for (int i = 0; i < _tracks.Length; i++) if (_tracks[i] != null)
                     _affectedRenderers[i] = _affectedRenderers[i].Concat(_renderers.Values.OfType<SkinnedMeshRenderer>()
                         .Where(r => r.bones.Contains(_tracks[i]) || r.rootBone == _tracks[i])).Distinct().ToArray();
+                KeepSourceAnimatorsUpdating();
                 foreach (var source in _renderers.Keys.Concat(_skippedRenderers))
-                { _hiddenSources[source] = source.forceRenderingOff; source.forceRenderingOff = true; }
+                    { _hiddenSources[source] = source.forceRenderingOff; source.forceRenderingOff = true; }
                 Apply(clip.StartTime);
+                SyncLiveExpressions(true);
                 _root.SetActive(true);
             }
             catch { Dispose(); throw; }
@@ -96,8 +103,8 @@ namespace MovementRecorder.Playback.Models
                     var result = target.gameObject.AddComponent<SkinnedMeshRenderer>(); copy = result;
                     result.sharedMesh = skin.sharedMesh; result.localBounds = skin.localBounds; result.quality = skin.quality;
                     result.updateWhenOffscreen = true; result.skinnedMotionVectors = skin.skinnedMotionVectors;
-                    if (skin.sharedMesh != null)
-                        for (int i = 0; i < skin.sharedMesh.blendShapeCount; i++) result.SetBlendShapeWeight(i, skin.GetBlendShapeWeight(i));
+                    if (skin.sharedMesh != null && skin.sharedMesh.blendShapeCount > 0)
+                        _blendShapes.Add(new BlendShapeBinding(skin, result));
                 }
                 else if (original is MeshRenderer)
                 {
@@ -171,15 +178,93 @@ namespace MovementRecorder.Playback.Models
                 source.forceRenderingOff = true;
             }
         }
+        // Read the final renderer output, whether it was produced by Animator, VRM or another provider.
+        // No provider scripts or animation state are copied, and Apply(time) stays independent of live expressions.
+        public void SyncLiveExpressions(bool isPlaying)
+        {
+            if (_disposed || _liveExpressionsStopped || !isPlaying) return;
+            foreach (var binding in _blendShapes)
+            {
+                if (binding.Disabled) continue;
+                if (binding.Source == null || binding.Target == null || binding.Mesh == null ||
+                    binding.Source.sharedMesh != binding.Mesh || binding.Target.sharedMesh != binding.Mesh ||
+                    binding.Mesh.blendShapeCount != binding.Weights.Length)
+                {
+                    binding.Disabled = true;
+                    Warn("表情の同期を停止しました。メッシュまたはRendererの対応が変わりました: " + binding.Path);
+                    continue;
+                }
+                for (int i = 0; i < binding.Weights.Length; i++)
+                {
+                    float weight = binding.Source.GetBlendShapeWeight(i);
+                    if (!Number.IsFinite(weight))
+                    {
+                        if (!binding.InvalidWeightReported)
+                        {
+                            binding.InvalidWeightReported = true;
+                            Warn("非有限のBlendShape値を省略しました: " + binding.Path);
+                        }
+                        continue;
+                    }
+                    if (binding.Weights[i] == weight) continue;
+                    binding.Target.SetBlendShapeWeight(i, weight);
+                    binding.Weights[i] = weight;
+                }
+            }
+        }
+        private void KeepSourceAnimatorsUpdating()
+        {
+            foreach (var binding in _blendShapes)
+                for (var source = binding.Source.transform; source != null; source = source.parent)
+                    foreach (var animator in source.GetComponents<Animator>())
+                    {
+                        if (_animatorCullingModes.ContainsKey(animator) || animator.cullingMode == AnimatorCullingMode.AlwaysAnimate) continue;
+                        _animatorCullingModes.Add(animator, animator.cullingMode);
+                        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                    }
+        }
+        public void StopLiveExpressions()
+        {
+            _liveExpressionsStopped = true;
+            foreach (var pair in _animatorCullingModes)
+            {
+                if (pair.Key == null) continue;
+                try { pair.Key.cullingMode = pair.Value; }
+                catch (Exception ex) { Warn("Animatorの更新設定を復元できませんでした: " + ex.Message); }
+            }
+            _animatorCullingModes.Clear();
+        }
+        private void Warn(string message)
+        {
+            // A diagnostic callback must not break expression updates or restoration of the other animators.
+            try { _warning?.Invoke(message); } catch { }
+        }
+        private sealed class BlendShapeBinding
+        {
+            public readonly SkinnedMeshRenderer Source, Target;
+            public readonly Mesh Mesh;
+            public readonly float[] Weights;
+            public readonly string Path;
+            public bool Disabled, InvalidWeightReported;
+            public BlendShapeBinding(SkinnedMeshRenderer source, SkinnedMeshRenderer target)
+            {
+                Source = source; Target = target; Mesh = source.sharedMesh;
+                Path = SceneModelResolver.PathOf(source.transform);
+                Weights = new float[Mesh.blendShapeCount];
+                for (int i = 0; i < Weights.Length; i++) Weights[i] = float.NaN;
+            }
+        }
         public void Dispose()
         {
             if (_disposed) return;
             _disposed = true;
+            StopLiveExpressions();
             foreach (var pair in _hiddenSources) if (pair.Key != null) pair.Key.forceRenderingOff = pair.Value;
             _hiddenSources.Clear();
             if (_root != null) UnityEngine.Object.Destroy(_root);
             foreach (var material in _materials.Values) if (material != null) UnityEngine.Object.Destroy(material);
             _materials.Clear();
+            _blendShapes.Clear();
         }
     }
 }

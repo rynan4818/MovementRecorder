@@ -154,6 +154,21 @@ namespace UnityEngine
         public static float Angle(Quaternion a, Quaternion b) => 2 * MathF.Acos(Math.Min(1, Math.Abs(System.Numerics.Quaternion.Dot(a.Numerics, b.Numerics)))) * 180 / MathF.PI;
     }
     public sealed class Mesh : Object { public int blendShapeCount; }
+    public enum AnimatorCullingMode { AlwaysAnimate, CullUpdateTransforms, CullCompletely }
+    public sealed class RuntimeAnimatorController : Object { }
+    public sealed class Animator : Behaviour
+    {
+        private AnimatorCullingMode _cullingMode;
+        public int CullingWrites;
+        public AnimatorCullingMode cullingMode
+        {
+            get { CheckAlive(); return _cullingMode; }
+            set { CheckAlive(); CullingWrites++; _cullingMode = value; }
+        }
+        public RuntimeAnimatorController runtimeAnimatorController;
+        public float speed = 1;
+        public bool applyRootMotion;
+    }
     public sealed class Material : Object { public Material() { } public Material(Material source) { } }
     public sealed class MaterialPropertyBlock { public bool isEmpty => true; public void Clear() { } }
     public class Renderer : Component
@@ -174,14 +189,23 @@ namespace UnityEngine
     public sealed class ParticleSystemRenderer : Renderer { }
     public sealed class SkinnedMeshRenderer : Renderer
     {
+        private readonly Dictionary<int, float> _blendShapeWeights = new Dictionary<int, float>();
+        public int BlendShapeWrites;
         public Mesh sharedMesh;
         public object localBounds;
         public int quality;
         public bool updateWhenOffscreen, skinnedMotionVectors;
         public Transform[] bones = Array.Empty<Transform>();
         public Transform rootBone;
-        public float GetBlendShapeWeight(int index) => 0;
-        public void SetBlendShapeWeight(int index, float weight) { }
+        public float GetBlendShapeWeight(int index)
+        { CheckBlendShapeIndex(index); return _blendShapeWeights.TryGetValue(index, out var value) ? value : 0; }
+        public void SetBlendShapeWeight(int index, float weight)
+        { CheckBlendShapeIndex(index); _blendShapeWeights[index] = weight; BlendShapeWrites++; }
+        private void CheckBlendShapeIndex(int index)
+        {
+            CheckAlive();
+            if (sharedMesh == null || index < 0 || index >= sharedMesh.blendShapeCount) throw new ArgumentOutOfRangeException(nameof(index));
+        }
     }
     public struct LOD
     {

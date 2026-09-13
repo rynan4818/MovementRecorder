@@ -50,7 +50,7 @@ function Check-Method([string]$type, [string]$method, [string]$returns = 'System
     $script:checks++
 }
 try {
-    foreach ($name in @('Main', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'UnityEngine.UI')) {
+    foreach ($name in @('Main', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'UnityEngine.UI', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule')) {
         $null = Read-Assembly (Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll")
     }
     foreach ($name in @('BSML', 'SiraUtil', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued')) {
@@ -107,6 +107,17 @@ try {
     Check-Method 'UnityEngine.EventSystems.EventSystem' 'get_current' 'UnityEngine.EventSystems.EventSystem'
     Check-Method 'UnityEngine.EventSystems.EventSystem' 'set_current'
     Check-Method 'UnityEngine.EventSystems.EventSystem' 'UpdateModules'
+    Check-Method 'UnityEngine.Animator' 'get_cullingMode' 'UnityEngine.AnimatorCullingMode'
+    Check-Method 'UnityEngine.Animator' 'set_cullingMode'
+    Check-Method 'UnityEngine.SkinnedMeshRenderer' 'get_sharedMesh' 'UnityEngine.Mesh'
+    Check-Method 'UnityEngine.SkinnedMeshRenderer' 'GetBlendShapeWeight' 'System.Single'
+    Check-Method 'UnityEngine.SkinnedMeshRenderer' 'SetBlendShapeWeight'
+    Check-Method 'UnityEngine.Mesh' 'get_blendShapeCount' 'System.Int32'
+    $blendShapeSetter = Find-Member 'UnityEngine.SkinnedMeshRenderer' 'SetBlendShapeWeight' 'Methods'
+    if (($blendShapeSetter.Parameters.ParameterType.FullName -join ',') -ne 'System.Int32,System.Single') { throw 'Wrong BlendShape setter signature' }
+    $cullingSetter = Find-Member 'UnityEngine.Animator' 'set_cullingMode' 'Methods'
+    if (($cullingSetter.Parameters.ParameterType.FullName -join ',') -ne 'UnityEngine.AnimatorCullingMode') { throw 'Wrong Animator culling setter signature' }
+    $checks += 2
     Check-Field 'PlayerHeadAndObstacleInteraction' '_intersectingObstacles' 'System.Collections.Generic.HashSet`1<ObstacleController>'
     Check-Field 'GameEnergyCounter' '_batteryLives' 'System.Int32'
     $hooks = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\MovementRecorder\Playback\Runtime\ReplayRuntimeHooks.cs') -Raw
@@ -143,6 +154,23 @@ try {
     })
     if ($trailCalls.Count -ne 0) { throw 'RecordedSaberDriver must not call native or provider trail lifecycle methods' }
     $checks++
+    # Only the original provider evaluates expressions. The clone must contain renderer data only.
+    $modelTypes = @($types.Values | Where-Object FullName -like 'MovementRecorder.Playback.Models.RenderModelClone*')
+    foreach ($instruction in $modelTypes.Methods | Where-Object HasBody | ForEach-Object { $_.Body.Instructions }) {
+        $call = $instruction.Operand
+        if ($call -isnot [Mono.Cecil.MethodReference]) { continue }
+        if ($call.DeclaringType.FullName -eq 'UnityEngine.Object' -and $call.Name -eq 'Instantiate') { throw 'RenderModelClone must not instantiate provider scripts' }
+        if ($call.Name -eq 'AddComponent') {
+            if ($call -isnot [Mono.Cecil.GenericInstanceMethod] -or $call.GenericArguments.Count -ne 1 -or
+                $call.GenericArguments[0].FullName -notin @('UnityEngine.SkinnedMeshRenderer', 'UnityEngine.MeshRenderer', 'UnityEngine.MeshFilter', 'UnityEngine.LODGroup')) {
+                throw "RenderModelClone must not copy animation or provider components: $call"
+            }
+        }
+        if ($call.DeclaringType.FullName -eq 'UnityEngine.Animator' -and $call.Name -notin @('get_cullingMode', 'set_cullingMode')) {
+            throw "RenderModelClone must not drive the original Animator state: $call"
+        }
+    }
+    $checks++
     $resources = @{}
     foreach ($resource in $product.MainModule.Resources) { $resources[$resource.Name] = $resource }
     foreach ($name in @('LiteDB', 'System.Buffers')) {
@@ -157,7 +185,7 @@ try {
         $checks++
     }
     foreach ($reference in $product.MainModule.AssemblyReferences) {
-        if ($reference.Name -in @('BeatLeader', 'ScoreSaber', 'HeadDistanceTravelled', 'HDTCounter', 'CustomAvatar', 'VMCAvatar', 'SaberFactory', 'CustomSaber', 'CustomSabers')) { throw "Unexpected assembly dependency: $($reference.Name)" }
+        if ($reference.Name -in @('BeatLeader', 'ScoreSaber', 'HeadDistanceTravelled', 'HDTCounter', 'CustomAvatar', 'VMCAvatar', 'NalulunaAvatars', 'NalulunaAvatarsLite', 'CustomKeyEvents', 'VRM', 'VRM10', 'UniGLTF', 'SaberFactory', 'CustomSaber', 'CustomSabers')) { throw "Unexpected assembly dependency: $($reference.Name)" }
     }
     $checks++
     $bindings = @{}
