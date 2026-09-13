@@ -45,6 +45,10 @@
     <DisableZipRelease>True</DisableZipRelease>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BeatSaber.Destinations">
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BeatSaber.Destinations.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="DataModels">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\DataModels.dll</HintPath>
       <Private>False</Private>

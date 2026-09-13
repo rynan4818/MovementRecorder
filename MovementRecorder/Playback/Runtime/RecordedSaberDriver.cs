@@ -18,13 +18,15 @@ namespace MovementRecorder.Playback.Runtime
             public Quaternion AnchorRotation;
         }
         private readonly MovementClip _clip;
+        private readonly TimeHelper _time;
         private readonly Hand[] _hands;
         private readonly Dictionary<VRController, bool> _trackingStates = new Dictionary<VRController, bool>();
         private float? _pausedAt;
         public Transform[] SaberRoots => _hands.Select(h => h.Saber.transform).ToArray();
-        public RecordedSaberDriver(MovementClip clip, ModelBindingPlan plan, SaberManager manager, BindingProfile profile)
+        public RecordedSaberDriver(MovementClip clip, ModelBindingPlan plan, SaberManager manager, BindingProfile profile, TimeHelper time)
         {
             _clip = clip;
+            _time = time ?? throw new ArgumentNullException(nameof(time));
             _hands = new[] { Bind(manager.leftSaber, profile.LeftAnchor, plan), Bind(manager.rightSaber, profile.RightAnchor, plan) };
             if (_hands[0].Track == _hands[1].Track) throw new InvalidOperationException("The left and right sabers need separate recorded tracks.");
             foreach (var hand in _hands)
@@ -85,7 +87,7 @@ namespace MovementRecorder.Playback.Runtime
         }
         public void PrepareHistory(float songTime)
         {
-            float now = TimeHelper.time;
+            float now = _time.Time;
             _pausedAt = now;
             foreach (var hand in _hands)
             {
@@ -107,12 +109,12 @@ namespace MovementRecorder.Playback.Runtime
         }
         public void PauseHistory()
         {
-            if (!_pausedAt.HasValue) _pausedAt = TimeHelper.time;
+            if (!_pausedAt.HasValue) _pausedAt = _time.Time;
         }
         public void ResumeHistory()
         {
             if (!_pausedAt.HasValue) return;
-            float offset = Mathf.Max(0, TimeHelper.time - _pausedAt.Value);
+            float offset = Mathf.Max(0, _time.Time - _pausedAt.Value);
             foreach (var hand in _hands)
             {
                 // Preserve unfinished after-cut ratings. AddNewData would notify those processors.

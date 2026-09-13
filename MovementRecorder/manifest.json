@@ -3,17 +3,17 @@
   "id": "MovementRecorder",
   "name": "MovementRecorder",
   "author": "Rynan",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Record object movement and replay recordings.",
-  "gameVersion": "1.40.0",
+  "gameVersion": "1.42.0",
   "loadAfter": [
     "Camera2"
   ],
   "dependsOn": {
-    "BSIPA": "^4.3.6",
-    "SiraUtil": "^3.2.1",
-    "BeatSaberMarkupLanguage": "^1.12.5",
-    "SongCore": "^3.15.2"
+    "BSIPA": "^4.3.7",
+    "SiraUtil": "^3.3.1",
+    "BeatSaberMarkupLanguage": "^1.14.1",
+    "SongCore": "^3.16.0"
   },
   "links": {
     "project-home": "https://github.com/rynan4818/MovementRecorder",

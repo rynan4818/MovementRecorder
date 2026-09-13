@@ -90,7 +90,7 @@ public sealed class Saber : MonoBehaviour
     public SaberMovementData movementDataForLogic = new SaberMovementData();
     public void OverridePositionAndRotation(Vector3 position, Quaternion rotation) => transform.SetPositionAndRotation(position, rotation);
 }
-public static class TimeHelper { public static float time; }
+public sealed class TimeHelper { public float Time; }
 public struct BladeMovementDataElement { public Vector3 topPos, bottomPos; public float time; }
 public interface ISaberMovementDataProcessor { }
 public sealed class SaberSwingRatingCounter : ISaberMovementDataProcessor { public float _cutTime; }

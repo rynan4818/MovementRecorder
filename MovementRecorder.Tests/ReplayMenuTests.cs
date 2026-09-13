@@ -96,6 +96,7 @@ namespace MovementRecorder.Tests
             PluginConfig.Instance.replayObserverX = -5; PluginConfig.Instance.replayObserverY = -3; PluginConfig.Instance.replayObserverZ = -8;
             BeatSaberUI.PendingDismiss(); await run;
             Assert.Equal(1, _transitions.Starts); Assert.True(_session.ShowSourceAvatar); Assert.False(_service.Busy);
+            Assert.True(_transitions.AdditionalInformation.startPaused);
             Assert.True(_session.OffsetSourceAvatarWithHmd);
             Assert.Equal(1.5f, _session.ObserverX); Assert.Equal(.5f, _session.ObserverY); Assert.Equal(-4, _session.ObserverZ);
             Assert.False(Flow.Opened); Assert.Empty(Plugin.Log.Errors);

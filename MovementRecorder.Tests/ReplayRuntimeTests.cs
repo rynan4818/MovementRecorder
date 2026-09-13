@@ -20,7 +20,8 @@ namespace MovementRecorder.Tests
     [Collection("Unity fixtures")]
     public sealed class ReplayRuntimeTests : IDisposable
     {
-        public ReplayRuntimeTests() { UObject.Objects.Clear(); Application.Clear(); TimeHelper.time = 10;
+        private readonly TimeHelper _time = new TimeHelper();
+        public ReplayRuntimeTests() { UObject.Objects.Clear(); Application.Clear(); _time.Time = 10;
             Configuration.PluginConfig.Instance = new Configuration.PluginConfig(); }
         public void Dispose() { UObject.Objects.Clear(); Application.Clear(); }
         private static GameObject Child(GameObject parent, string name)
@@ -50,12 +51,12 @@ namespace MovementRecorder.Tests
             saber._saberBladeTopTransform.localPosition = new Vector3(0, 0, 1);
             return (saber, anchor, tracker);
         }
-        private static RecordedSaberDriver Driver((Saber saber, Transform anchor, VRController tracker) left,
+        private RecordedSaberDriver Driver((Saber saber, Transform anchor, VRController tracker) left,
             (Saber saber, Transform anchor, VRController tracker) right)
         {
             var tracks = new[] { left.anchor, right.anchor };
             return new RecordedSaberDriver(Clip(tracks), new ModelBindingPlan { Sources = tracks, Types = new[] { "Saber", "Saber" } },
-                new SaberManager { leftSaber = left.saber, rightSaber = right.saber }, new BindingProfile());
+                new SaberManager { leftSaber = left.saber, rightSaber = right.saber }, new BindingProfile(), _time);
         }
 
         [Fact] public void StartupSeekAndResumeNeverInvokeProviderTrailReset()
@@ -64,8 +65,8 @@ namespace MovementRecorder.Tests
             var native = left.anchor.gameObject.AddComponent<SaberTrail>();
             var custom = right.anchor.gameObject.AddComponent<TransformSampledTrail>();
             using var driver = Driver(left, right);
-            driver.TakeControl(); driver.PrepareHistory(0); TimeHelper.time += 1; driver.ResumeHistory();
-            driver.PauseHistory(); driver.PrepareHistory(1); TimeHelper.time += 2; driver.ResumeHistory();
+            driver.TakeControl(); driver.PrepareHistory(0); _time.Time += 1; driver.ResumeHistory();
+            driver.PauseHistory(); driver.PrepareHistory(1); _time.Time += 2; driver.ResumeHistory();
             Assert.Equal(0, native.ResetCalls); Assert.Equal(0, custom.ResetCalls);
             Assert.True(native.enabled); Assert.True(custom.enabled);
             SamePosition(new Vector3(1, 0, 0), left.saber.transform.position);
@@ -82,7 +83,7 @@ namespace MovementRecorder.Tests
             SamePosition(new Vector3(.6f, 0, 1), movement._data[0].topPos);
             driver.ResumeHistory();
             var counter = new SaberSwingRatingCounter { _cutTime = 9.9f }; processors.items.Add(counter);
-            driver.PauseHistory(); TimeHelper.time = 20; driver.PauseHistory(); driver.ResumeHistory(); driver.ResumeHistory();
+            driver.PauseHistory(); _time.Time = 20; driver.PauseHistory(); driver.ResumeHistory(); driver.ResumeHistory();
             Assert.Equal(49, movement.AddCalls); Assert.Equal(19.9f, counter._cutTime, 4);
             Assert.Equal(19.9999f, movement._data[48].time, 4);
         }
@@ -100,7 +101,7 @@ namespace MovementRecorder.Tests
             var left = Hand("Left"); var right = Hand("Right"); var clip = Clip(left.anchor, right.anchor);
             var plan = new SceneModelResolver(clip).Resolve(new BindingProfile());
             Assert.True(plan.Ready); Assert.Equal(new[] { left.anchor, right.anchor }, plan.Sources); Assert.Empty(plan.CloneRoots);
-            using var driver = new RecordedSaberDriver(clip, plan, new SaberManager { leftSaber = left.saber, rightSaber = right.saber }, new BindingProfile());
+            using var driver = new RecordedSaberDriver(clip, plan, new SaberManager { leftSaber = left.saber, rightSaber = right.saber }, new BindingProfile(), _time);
             using var clone = new RenderModelClone(clip, plan, false, driver.SaberRoots);
             Assert.Empty(clone.Transforms); Assert.Empty(clone.SkippedRenderers);
             Assert.False(left.anchor.GetComponent<MeshRenderer>().forceRenderingOff);

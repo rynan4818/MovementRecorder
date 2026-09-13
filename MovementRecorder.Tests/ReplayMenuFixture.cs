@@ -128,13 +128,20 @@ public sealed class GameplaySetupViewController
     public TestPlayerSettings playerSettings = new TestPlayerSettings();
 }
 public sealed class PracticeSettings { public float startSongTime, songSpeedMul; }
+public sealed class GameplayAdditionalInformation
+{
+    public readonly bool startPaused;
+    public GameplayAdditionalInformation(string backButtonText = null, bool startPaused = false) { this.startPaused = startPaused; }
+}
 public sealed class MenuTransitionsHelper
 {
     public int Starts;
     public BeatmapKey StartedChart;
-    public void StartStandardLevel(string mode, in BeatmapKey chart, BeatmapLevel level, IBeatmapLevelData data, object environment, object color, bool overrideLightshowColors, object beatmapColor,
-        GameplayModifiers modifiers, TestPlayerSettings settings, PracticeSettings practice, EnvironmentsListModel environments, string back, bool a, bool b,
-        object before, object switched, Action<object, object> finished, object restarted) { Starts++; StartedChart = chart; }
+    public GameplayAdditionalInformation AdditionalInformation;
+    public void StartStandardLevel(string mode, in BeatmapKey chart, BeatmapLevel level, object environment, object color, bool overrideLightshowColors,
+        GameplayModifiers modifiers, TestPlayerSettings settings, PracticeSettings practice, EnvironmentsListModel environments, GameplayAdditionalInformation information,
+        object before, object switched, Action<object, object> finished, object restarted, IBeatmapLevelData data)
+    { Starts++; StartedChart = chart; AdditionalInformation = information; }
 }
 namespace SongCore
 {

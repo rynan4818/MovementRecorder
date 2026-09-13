@@ -21,6 +21,7 @@ namespace MovementRecorder.Playback.Runtime
         [Inject] private readonly ReplaySession _session = null;
         [Inject] private readonly Camera2ReplayInterop _camera2 = null;
         [Inject] private readonly AudioTimeSyncController _audio = null;
+        [Inject] private readonly TimeHelper _time = null;
         [Inject] private readonly BeatmapCallbacksController _callbacks = null;
         [Inject] private readonly BeatmapCallbacksUpdater _updater = null;
         [Inject] private readonly BeatmapObjectManager _objects = null;
@@ -106,7 +107,7 @@ namespace MovementRecorder.Playback.Runtime
                     Resolver = new SceneModelResolver(_session.Clip); Plan = Resolver.Resolve(Profile);
                     if (Plan.Ready)
                     {
-                        _driver = new RecordedSaberDriver(_session.Clip, Plan, _sabers, Profile);
+                        _driver = new RecordedSaberDriver(_session.Clip, Plan, _sabers, Profile, _time);
                         break;
                     }
                     Message = "Checking " + Plan.Issues.Count + " mappings…";

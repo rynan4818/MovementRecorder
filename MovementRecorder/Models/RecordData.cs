@@ -1,4 +1,4 @@
-﻿using MovementRecorder.Utility;
+using MovementRecorder.Utility;
 using MovementRecorder.Configuration;
 using Newtonsoft.Json;
 using System;
@@ -138,7 +138,7 @@ namespace MovementRecorder.Models
                 timaer.Stop();
                 return false;
             }
-            this._allObjects = UnityUtility.GetFullPathNames(UnityEngine.Object.FindObjectsOfType(typeof(Transform)));
+            this._allObjects = UnityUtility.GetFullPathNames(UnityEngine.Object.FindObjectsByType(typeof(Transform), FindObjectsSortMode.InstanceID));
             var transforms = new List<Transform>();
             this._objectNames = new List<string>();
             this._searchSettings = new List<SearchSetting>();
@@ -213,7 +213,7 @@ namespace MovementRecorder.Models
                 return;
             this._motionLocalEnabled = new List<string>();
             this._motionWorldEnabled = new List<string>();
-            var allObjects = UnityUtility.GetFullPathNames(UnityEngine.Object.FindObjectsOfType(typeof(Transform)));
+            var allObjects = UnityUtility.GetFullPathNames(UnityEngine.Object.FindObjectsByType(typeof(Transform), FindObjectsSortMode.InstanceID));
             foreach(var obj in allObjects)
             {
                 foreach (var posRot in this._allPosRot)

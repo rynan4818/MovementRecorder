@@ -221,12 +221,13 @@ namespace MovementRecorder.Playback.UI
                 _guards.Prepare();
                 _session.Begin(clip, showSourceAvatar, offsetSourceAvatar);
                 var modifiers = _setup.gameplayModifiers.CopyWith(noFailOn0Energy: _session.NoFail, songSpeed: GameplayModifiers.SongSpeed.Normal);
-                _transitions.StartStandardLevel(ReplaySession.GameMode, chart.Key, chart.Level, loaded.beatmapLevelData, _setup.environmentOverrideSettings,
+                _transitions.StartStandardLevel(ReplaySession.GameMode, chart.Key, chart.Level, _setup.environmentOverrideSettings,
                     _setup.colorSchemesSettings.GetOverrideColorScheme(), _setup.colorSchemesSettings.ShouldOverrideLightshowColors(),
-                    chart.Level.GetColorScheme(chart.Key.beatmapCharacteristic, chart.Key.difficulty),
                     modifiers, _setup.playerSettings.CopyWith(autoRestart: false),
-                    new PracticeSettings { startSongTime = 0, songSpeedMul = 1 }, _environments, "Song Selection", false, true, null, null,
-                    (setup, result) => { _session.Finish(); Status = "Replay finished. Scores and play history were not saved."; Notify(); }, null);
+                    new PracticeSettings { startSongTime = 0, songSpeedMul = 1 }, _environments,
+                    new GameplayAdditionalInformation(backButtonText: "Song Selection", startPaused: true), null, null,
+                    (setup, result) => { _session.Finish(); Status = "Replay finished. Scores and play history were not saved."; Notify(); }, null,
+                    loaded.beatmapLevelData);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)

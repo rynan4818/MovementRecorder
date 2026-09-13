@@ -1,5 +1,6 @@
 param(
     [Parameter(Mandatory = $true)][string]$GameDirectory,
+    [string]$DependencyDirectory,
     [string]$PluginAssembly = (Join-Path $PSScriptRoot '..\MovementRecorder\bin\Release\MovementRecorder.dll'),
     [string]$CecilAssembly = (Join-Path $env:USERPROFILE '.nuget\packages\mono.cecil\0.11.6\lib\netstandard2.0\Mono.Cecil.dll')
 )
@@ -9,6 +10,7 @@ $resolver = [Mono.Cecil.DefaultAssemblyResolver]::new()
 foreach ($directory in @((Join-Path $GameDirectory 'Beat Saber_Data\Managed'), (Join-Path $GameDirectory 'Plugins'), (Join-Path $GameDirectory 'Libs'))) {
     $resolver.AddSearchDirectory($directory)
 }
+if ($DependencyDirectory) { $resolver.AddSearchDirectory([IO.Path]::GetFullPath($DependencyDirectory)) }
 $parameters = [Mono.Cecil.ReaderParameters]::new()
 $parameters.AssemblyResolver = $resolver
 $parameters.InMemory = $true
@@ -51,10 +53,13 @@ function Check-Method([string]$type, [string]$method, [string]$returns = 'System
 }
 try {
     foreach ($name in @('Main', 'DataModels', 'BeatSaber.ViewSystem', 'Tweening', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
-        $null = Read-Assembly (Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll")
+        $path = Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll"
+        if ($name -eq 'IPA.Loader' -and !(Test-Path -LiteralPath $path) -and $DependencyDirectory) { $path = Join-Path $DependencyDirectory "$name.dll" }
+        $null = Read-Assembly $path
     }
     foreach ($name in @('BSML', 'SiraUtil', 'SongCore', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued', 'SongPlayHistory', 'Camera2')) {
         $path = Join-Path $GameDirectory "Plugins\$name.dll"
+        if (!(Test-Path -LiteralPath $path) -and $DependencyDirectory) { $path = Join-Path $DependencyDirectory "$name.dll" }
         if (Test-Path -LiteralPath $path) { $null = Read-Assembly $path }
     }
     $product = Read-Assembly $PluginAssembly
@@ -122,6 +127,7 @@ try {
     Check-Field 'SaberMovementData' '_data' 'BladeMovementDataElement[]'
     Check-Field 'SaberSwingRatingCounter' '_cutTime' 'System.Single'
     Check-Method 'MainCamera' 'get_camera' 'UnityEngine.Camera'
+    Check-Method 'TimeHelper' 'get_Time' 'System.Single'
     Check-Method 'SiraUtil.Tools.FPFC.IFPFCSettings' 'get_Enabled' 'System.Boolean'
     Check-Method 'Saber' 'OverridePositionAndRotation'
     Check-Field 'VRUIControls.VRPointer' '_laserPointerPrefab' 'VRUIControls.VRLaserPointer'
@@ -391,9 +397,9 @@ try {
     }
     $reader = [IO.StreamReader]::new($resources['MovementRecorder.manifest.json'].GetResourceStream())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-    if ($manifest.gameVersion -ne '1.40.0') { throw 'gameVersion was changed' }
+    if ($manifest.gameVersion -ne '1.42.0') { throw 'gameVersion was changed' }
     $checks++
-    if ($manifest.version -ne '0.3.3') { throw 'Plugin version was changed' }
+    if ($manifest.version -ne '0.3.4') { throw 'Plugin version was changed' }
     if ($manifest.dependsOn.PSObject.Properties.Name -contains 'Camera2' -or $manifest.dependsOn.PSObject.Properties.Name -contains 'CameraPlus') {
         throw 'Camera MODs must remain optional'
     }
