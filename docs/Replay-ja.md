@@ -1,16 +1,12 @@
-# MovementRecorder リプレイ（MovementRecorder 0.3.1 / Beat Saber 1.37.4-1.39.1）
+# MovementRecorder リプレイ（MovementRecorder 0.3.2 / Beat Saber 1.37.4-1.39.1）
 
 記録済みの `.mvrec` を読み込み、ゲームに読み込まれているアバター等をコピーして鑑賞します。セイバーはコピーせず、ゲームが表示している左右のセイバーを記録姿勢で動かします。モデルやトレイルの表示は現在のゲーム・MODに任せ、特定のモデルMODのアセンブリには依存しません。記録ファイルにモデル・テクスチャ・ブレンドシェイプ・当時の譜面設定は含まれないため、元のモデルと当時の設定を用意してください。
 
-ユーザー環境で一覧の表示・選択、曲の開始、アバターとセイバーの再生が確認されています。2026-09-13の表情同期修正はReleaseビルド、内部API照合、自動テストを実施済みで、ユーザーの実機テストでも問題が見られないとの報告を受けています。ポーズ・シークの個別操作、ゲーム終了後の保存先比較については実機確認を継続します。
+1.29.1では開発中の動作確認報告があります。今回の配布版の自動検証と公開前の実機確認状況は、[リリース準備](https://github.com/rynan4818/MovementRecorder/blob/v0.3.2/docs/Replay-Release-Preparation-ja.md)を参照してください。
 
 ## 使い方
 
-リプレイ関連のUIは英語表記です。画面のボタン名・設定名は以下の英語表記に対応します。[英語UIの変更対照表](https://github.com/rynan4818/MovementRecorder/blob/BS1.37.4/docs/Replay-English-UI-Plan-ja.md) を参照してください。
-
-今回のリプレイメニュー整理・コピー元表示設定の変更は自動検証済みです。HMDでの表示・操作確認はこれからです。[最新の検証報告](https://github.com/rynan4818/MovementRecorder/blob/BS1.37.4/docs/Replay-Menu-Source-Visibility-ja.md) を参照してください。
-
-最新のカメラ複製・レイヤー保持の修正は、自動テストとReleaseビルドに加え、ユーザーからも動作確認OKとの報告を受けています。[検証報告](https://github.com/rynan4818/MovementRecorder/blob/BS1.37.4/docs/Replay-Camera-Clone-Layer-Fix-ja.md) を参照してください。
+リプレイ関連のUIは英語表記です。画面のボタン名・設定名は以下の英語表記に対応します。[英語UIの変更対照表](https://github.com/rynan4818/MovementRecorder/blob/v0.3.2/docs/Replay-English-UI-Plan-ja.md) を参照してください。
 
 1. 普段のMODで、記録したときと同じアバターとセイバーを読み込みます。
 2. Soloで曲・Standard・難易度を選びます。記録当時の左右設定、部屋調整、譜面オプションも合わせてください。
@@ -19,7 +15,7 @@
 
 「Movement Recorder Enabled」は従来どおり記録の設定です。オフでもリプレイを起動できます。ファイル選択そのものでは再生を開始しません。読み込み中はリプレイメニューの「Cancel Load」で中止し、そのまま選び直せます。メニューの戻る操作でも読み込みを中止します。
 
-記録日時・記録秒数・対象数・サイズを1行で表示し、頭の移動距離を右端に表示します。選択した行の情報と距離、上部のファイル名を水色で強調し、「Selected」と表示します。選択ファイル名は鑑賞設定の表示中も確認できます。読込不可の理由は詳細欄で赤色表示します。一覧更新後に選択ファイルが削除・差し替えされていた場合は選択を解除します。[行表示の修正報告](https://github.com/rynan4818/MovementRecorder/blob/BS1.37.4/docs/Replay-Menu-Row-Fix-ja.md) を参照してください。
+記録日時・記録秒数・対象数・サイズを1行で表示し、頭の移動距離を右端に表示します。選択した行の情報と距離、上部のファイル名を水色で強調し、「Selected」と表示します。選択ファイル名は鑑賞設定の表示中も確認できます。読込不可の理由は詳細欄で赤色表示します。一覧更新後に選択ファイルが削除・差し替えされていた場合は選択を解除します。[行表示の修正報告](https://github.com/rynan4818/MovementRecorder/blob/v0.3.2/docs/Replay-Menu-Row-Fix-ja.md) を参照してください。
 
 一覧は選択中の譜面に合う記録を新しい順に表示します。対象はゲームの `UserData/MovementRecorder` と、現在選択したカスタム譜面内の `MovementRecorder` フォルダです。ヘッダーを読めないファイルはエラーとして表示します。
 
@@ -46,7 +42,7 @@
 | `replayObserverY` | `0` | 上下（−3〜3 m） |
 | `replayObserverZ` | `-2` | 前後（−8〜5 m） |
 
-鑑賞設定と再生中の操作パネルのどちらで変更した値も保存します。アバターのオフセット適用をOFFにしても、位置の設定は保持します。今回のオフセット表示とゲーム再起動後の保存・復元は実機未確認です。
+鑑賞設定と再生中の操作パネルのどちらで変更した値も保存します。アバターのオフセット適用をOFFにしても、位置の設定は保持します。
 
 左右・上下・前後は、両方の画面で0.1 m刻みに調整できます。小数計算の微小誤差を調整時に補正し、XYZを0へ戻したときにはアバター移動の専用処理も解除します。
 
@@ -90,7 +86,7 @@ Camera2の一人称カメラへは、現在のHMDの位置・向きを渡しま�
 
 Camera2は必須ではありません。CameraPlusのみ／カメラMODなしの場合もリプレイ本体を利用できます。Camera2のAPI不足などで連携できない場合は、ゲームログへ理由を一度出してリプレイ本体は続行します。開始時に連携できなかった場合は、Camera2の通常のシーン選択が使われます。
 
-Camera2 0.6.108の公開APIと照合済みです。今回のシーン連携は実機確認前のため、REPLAYだけに割り当てたカメラで表示を確認してください。[連携の検証報告](https://github.com/rynan4818/MovementRecorder/blob/BS1.37.4/docs/Replay-Camera2-Integration-ja.md) を参照してください。
+Camera2側のScene設定でREPLAYにカメラを割り当ててください。[連携の仕様と検証記録](https://github.com/rynan4818/MovementRecorder/blob/v0.3.2/docs/Replay-Camera2-Integration-ja.md) を参照してください。
 
 ## 表情
 
@@ -98,7 +94,7 @@ Camera2 0.6.108の公開APIと照合済みです。今回のシーン連携は�
 
 ポーズ・シーク・再生完了中は最後の表情を保持し、再開すると元アバターの最新の表情を反映します。元MODの表情制御自体は停止しません。マテリアルの色・テクスチャ切り替えによる表情は同期対象外です。
 
-顔の名前には依存せず、対応したSkinnedMeshRendererのBlendShapeを使用します。元のメッシュが途中で差し替わった場合などは、そのRendererの表情同期を停止してログへ理由を出します。必要な元Animatorの非表示時の更新設定を一時調整し、エラー・再準備・退出時に復元します。MODごとの非表示時の表情更新や実行タイミングは実機での確認が必要です。[表情同期の検証報告](https://github.com/rynan4818/MovementRecorder/blob/BS1.37.4/docs/Replay-BlendShape-Live-Fix-ja.md) を参照してください。
+顔の名前には依存せず、対応したSkinnedMeshRendererのBlendShapeを使用します。元のメッシュが途中で差し替わった場合などは、そのRendererの表情同期を停止してログへ理由を出します。必要な元Animatorの非表示時の更新設定を一時調整し、エラー・再準備・退出時に復元します。MODごとの非表示時の表情更新や実行タイミングは実機での確認が必要です。[表情同期の検証報告](https://github.com/rynan4818/MovementRecorder/blob/v0.3.2/docs/Replay-BlendShape-Live-Fix-ja.md) を参照してください。
 
 ## 頭の移動距離とキャッシュ
 
@@ -118,4 +114,4 @@ HeadDistanceTravelled／HDT Counterの生成・表示・計測・保存には介
 
 初期範囲はSolo・Standard・両手セイバー・通常速度です。必須拡張が指定された譜面は開始を止めます。アバター／OtherのMeshRenderer／SkinnedMeshRendererを再生し、これらのコピー対象に付属するTrailRenderer・LineRenderer・ParticleSystemRenderer等の未対応描画は省略します。省略は操作パネルとログに表示します。未対応描画だけで構成されたコピー対象モデルは、対応設定での確認が必要です。セイバーの描画にはこの制限を適用しません。マルチプレイと記録時と異なるモデルへの骨格変換は対象外です。環境演出の乱数は記録ファイルにないため、記録時のランダム演出との一致は保証しません。
 
-`manifest.json` の `gameVersion` は対応開始版の **1.37.4** です。このDLLの対応範囲は1.37.4-1.39.1です。1.37.1-1.37.3には同じ0.3.1リリースのbs1.37.1のZIPを使用してください。移植後のHMDでの動作確認は未実施です。
+`manifest.json` の `gameVersion` は対応開始版の **1.37.4** です。このブランチはBeat Saber 1.37.4-1.39.1向けで、基準ビルドは1.37.4を参照します。

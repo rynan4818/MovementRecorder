@@ -1,5 +1,6 @@
 param(
     [Parameter(Mandatory = $true)][string]$GameDirectory,
+    [string]$DependencyDirectory,
     [string]$PluginAssembly = (Join-Path $PSScriptRoot '..\MovementRecorder\bin\Release\MovementRecorder.dll'),
     [string]$CecilAssembly = (Join-Path $env:USERPROFILE '.nuget\packages\mono.cecil\0.11.6\lib\netstandard2.0\Mono.Cecil.dll')
 )
@@ -9,6 +10,7 @@ $resolver = [Mono.Cecil.DefaultAssemblyResolver]::new()
 foreach ($directory in @((Join-Path $GameDirectory 'Beat Saber_Data\Managed'), (Join-Path $GameDirectory 'Plugins'), (Join-Path $GameDirectory 'Libs'))) {
     $resolver.AddSearchDirectory($directory)
 }
+if ($DependencyDirectory) { $resolver.AddSearchDirectory([IO.Path]::GetFullPath($DependencyDirectory)) }
 $parameters = [Mono.Cecil.ReaderParameters]::new()
 $parameters.AssemblyResolver = $resolver
 $parameters.InMemory = $true
@@ -51,10 +53,13 @@ function Check-Method([string]$type, [string]$method, [string]$returns = 'System
 }
 try {
     foreach ($name in @('Main', 'DataModels', 'BeatSaber.ViewSystem', 'Tweening', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
-        $null = Read-Assembly (Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll")
+        $path = Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll"
+        if ($name -eq 'IPA.Loader' -and !(Test-Path -LiteralPath $path) -and $DependencyDirectory) { $path = Join-Path $DependencyDirectory "$name.dll" }
+        $null = Read-Assembly $path
     }
-    foreach ($name in @('BSML', 'SiraUtil', 'SongCore', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued', 'Camera2')) {
+    foreach ($name in @('BSML', 'SiraUtil', 'SongCore', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued', 'SongPlayHistory', 'Camera2')) {
         $path = Join-Path $GameDirectory "Plugins\$name.dll"
+        if (!(Test-Path -LiteralPath $path) -and $DependencyDirectory) { $path = Join-Path $DependencyDirectory "$name.dll" }
         if (Test-Path -LiteralPath $path) { $null = Read-Assembly $path }
     }
     $product = Read-Assembly $PluginAssembly
@@ -245,9 +250,19 @@ try {
     foreach ($type in @('LightRotationEventEffect', 'LightPairRotationEventEffect', 'LightPairSinMoveEventEffect')) { Check-Method $type 'Update' }
     foreach ($contract in @(
         @('BeatLeader', 'BeatLeader.Installers.OnGameplayCoreInstaller', 'InitRecorder'),
-        @('BeatLeader', 'BeatLeader.Utils.ScoreUtil', 'ProcessReplay'),
-        @('SongPlayHistoryContinued', 'SongPlayHistoryContinued.Plugin', 'SaveRecord')
+        @('BeatLeader', 'BeatLeader.Utils.ScoreUtil', 'ProcessReplay')
     )) { if ($loadedAssemblies.ContainsKey($contract[0])) { Check-Method $contract[1] $contract[2] } }
+    if ($loadedAssemblies.ContainsKey('SongPlayHistoryContinued') -or $loadedAssemblies.ContainsKey('SongPlayHistory')) {
+        if ($types.ContainsKey('SongPlayHistoryContinued.Plugin')) {
+            Check-Method 'SongPlayHistoryContinued.Plugin' 'SaveRecord'
+        } else {
+            $tracker = $types['SongPlayHistory.SongPlayTracking.SongPlayTracker']
+            $initialize = @($tracker.Methods | Where-Object { $_.Name -match '(^|\.)Initialize$' -and $_.Parameters.Count -eq 0 })
+            if ($initialize.Count -ne 1 -or $initialize[0].ReturnType.FullName -ne 'System.Void') { throw 'Wrong history initialization contract' }
+            $checks++
+            Check-Method 'SongPlayHistory.SongPlayTracking.SongPlayTracker' 'HandleLevelFinished'
+        }
+    }
     if ($loadedAssemblies.ContainsKey('ScoreSaber')) {
         if ($types.ContainsKey('ScoreSaber.Features.Replays.ReplayStateRegistry')) {
             Check-Method 'ScoreSaber.Features.Replays.Installers.RecordInstaller' 'InstallBindings'

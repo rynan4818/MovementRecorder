@@ -5,15 +5,15 @@
 
 0.3系では、Beat Saber内で記録したモデルを第三者視点から鑑賞できます。**MOVEMENT RECORDER → Replay** でファイルを選び、**Start Replay** を押します。一時停止・シーク、表情同期、Camera2のREPLAY連携、コピー元アバターの表示・オフセット設定に対応します。[リプレイの使い方](docs/Replay-ja.md) を参照してください。
 
-現在のブランチは **BS1.37.4 / MovementRecorder 0.3.1 / Beat Saber 1.37.4-1.39.1** です。
+現在のブランチは **BS1.37.4 / MovementRecorder 0.3.2 / Beat Saber 1.37.4-1.39.1** です。
 
 | Beat Saber | MovementRecorder | ブランチ |
 | --- | --- | --- |
 | 1.29.0-1.29.1 | 0.3.0 | BS1.29.1 |
 | 1.37.1-1.37.3 | 0.3.1 | BS1.37.1 |
-| 1.37.4-1.39.1 | 0.3.1 | BS1.37.4 |
-| 1.40.0-1.40.8 | 0.3.2 | BS1.40.0 |
-| 1.42.0-1.44.1 | 0.3.3 | main |
+| 1.37.4-1.39.1 | 0.3.2 | BS1.37.4 |
+| 1.40.0-1.40.8 | 0.3.3 | BS1.40.0 |
+| 1.42.0-1.44.1 | 0.3.4 | main |
 
 1.44.2以降は未対応です。リリース準備中の各版のビルド・実機確認状況は[リリース準備](docs/Replay-Release-Preparation-ja.md)を参照してください。
 
@@ -248,5 +248,3 @@ https://learn.microsoft.com/ja-jp/dotnet/api/system.io.binarywriter.write7bitenc
 
 リトルエンディアンなので
 * 0000011+0111111 = 0b110111111 → 447
-
-

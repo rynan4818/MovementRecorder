@@ -1,5 +1,6 @@
 param(
     [Parameter(Mandatory = $true)][string]$GameDirectory,
+    [string]$DependencyDirectory,
     [string]$PluginAssembly = (Join-Path $PSScriptRoot '..\MovementRecorder\bin\Release\MovementRecorder.dll'),
     [string]$CecilAssembly = (Join-Path $env:USERPROFILE '.nuget\packages\mono.cecil\0.11.6\lib\netstandard2.0\Mono.Cecil.dll')
 )
@@ -7,6 +8,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -LiteralPath $CecilAssembly
 $resolver = [Mono.Cecil.DefaultAssemblyResolver]::new()
 foreach ($folder in @('Beat Saber_Data\Managed', 'Plugins', 'Libs')) { $resolver.AddSearchDirectory((Join-Path $GameDirectory $folder)) }
+if ($DependencyDirectory) { $resolver.AddSearchDirectory([IO.Path]::GetFullPath($DependencyDirectory)) }
 $parameters = [Mono.Cecil.ReaderParameters]::new()
 $parameters.AssemblyResolver = $resolver
 $parameters.InMemory = $true
@@ -33,5 +35,5 @@ try {
         } catch { $problems.Add($reference.FullName + ': ' + $_.Exception.Message) }
     }
     if ($problems.Count -gt 0) { throw ($problems -join "`n") }
-    [pscustomobject]@{ Result = 'Passed'; TypeReferences = $typeCount; MemberReferences = $count; Game = $GameDirectory; Plugin = $PluginAssembly }
+    [pscustomobject]@{ Result = 'Passed'; TypeReferences = $typeCount; MemberReferences = $count; Game = $GameDirectory; Dependencies = $DependencyDirectory; Plugin = $PluginAssembly }
 } finally { $product.Dispose(); $resolver.Dispose() }
