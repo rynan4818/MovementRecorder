@@ -54,6 +54,10 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="netstandard" />
+    <Reference Include="BeatSaber.ViewSystem">
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BeatSaber.ViewSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="BGLib.UnityExtension">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BGLib.UnityExtension.dll</HintPath>
       <Private>False</Private>

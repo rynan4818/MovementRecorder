@@ -180,7 +180,7 @@ namespace BeatSaberMarkupLanguage.Attributes
     public sealed class UIComponentAttribute : Attribute { public UIComponentAttribute(string name) { } }
 }
 namespace BeatSaberMarkupLanguage.Components
-{ public sealed class CustomCellListTableData { public TableView tableView = new TableView(); } }
+{ public sealed class CustomCellListTableData { public TableView TableView = new TableView(); } }
 namespace BeatSaberMarkupLanguage.ViewControllers
 {
     public class BSMLAutomaticViewController : ViewController, INotifyPropertyChanged

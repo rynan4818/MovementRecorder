@@ -73,10 +73,10 @@ namespace MovementRecorder.Tests
         [Fact] public void HistoryRebuildPreservesMovementInstanceAndResumePreservesPendingCutWindow()
         {
             var left = Hand("Left"); var right = Hand("Right"); using var driver = Driver(left, right);
-            var movement = left.saber.movementData;
+            var movement = left.saber.movementDataForLogic;
             var processors = movement._dataProcessors;
             driver.PrepareHistory(1);
-            Assert.Same(movement, left.saber.movementData); Assert.Same(processors, movement._dataProcessors);
+            Assert.Same(movement, left.saber.movementDataForLogic); Assert.Same(processors, movement._dataProcessors);
             Assert.Equal(49, movement._validCount); Assert.Equal(49, movement.AddCalls);
             Assert.Equal(9.5999f, movement._data[0].time, 4); Assert.Equal(9.9999f, movement._data[48].time, 4);
             SamePosition(new Vector3(.6f, 0, 1), movement._data[0].topPos);

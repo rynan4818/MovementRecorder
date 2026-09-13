@@ -89,10 +89,10 @@ namespace MovementRecorder.Playback.Runtime
             _pausedAt = now;
             foreach (var hand in _hands)
             {
-                var movement = hand.Saber.movementData;
+                var movement = hand.Saber.movementDataForLogic;
                 var data = GameAccess.Get<BladeMovementDataElement[]>(movement, "_data"); Array.Clear(data, 0, data.Length);
                 GameAccess.Set(movement, "_nextAddIndex", 0); GameAccess.Set(movement, "_validCount", 0); GameAccess.Set(movement, "_bladeSpeed", 0f);
-                // Keep the same movementData instance and its registered processors. Pending cut processors
+                // Keep the same movementDataForLogic instance and its registered processors. Pending cut processors
                 // have already been finished by the segment reset before this history is rebuilt.
                 for (int sample = 0; sample <= 48; sample++)
                 {
@@ -102,7 +102,7 @@ namespace MovementRecorder.Playback.Runtime
                 }
                 Apply(hand, songTime);
                 // Models and trails remain owned by the game/model provider. In particular,
-                // SaberTrail subclasses can sample transforms without native movementData.
+                // SaberTrail subclasses can sample transforms without native movementDataForLogic.
             }
         }
         public void PauseHistory()
@@ -116,11 +116,11 @@ namespace MovementRecorder.Playback.Runtime
             foreach (var hand in _hands)
             {
                 // Preserve unfinished after-cut ratings. AddNewData would notify those processors.
-                var data = GameAccess.Get<BladeMovementDataElement[]>(hand.Saber.movementData, "_data");
+                var data = GameAccess.Get<BladeMovementDataElement[]>(hand.Saber.movementDataForLogic, "_data");
                 for (int i = 0; i < data.Length; i++) data[i].time += offset;
                 // Native after-cut counters compare the next sample against their own cut timestamp.
                 // Rebase that timestamp too, so time spent paused cannot exhaust the 0.4 s window.
-                var processors = GameAccess.Get<LazyCopyHashSet<ISaberMovementDataProcessor>>(hand.Saber.movementData, "_dataProcessors");
+                var processors = GameAccess.Get<LazyCopyHashSet<ISaberMovementDataProcessor>>(hand.Saber.movementDataForLogic, "_dataProcessors");
                 foreach (var counter in processors.items.OfType<SaberSwingRatingCounter>())
                     GameAccess.Set(counter, "_cutTime", GameAccess.Get<float>(counter, "_cutTime") + offset);
             }

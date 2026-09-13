@@ -31,12 +31,11 @@ ZIPはBeatSaberModdingTools.Tasks 2.0.0-beta1が `MovementRecorder/bin/Release/z
 
 ## このブランチの確認
 
-- BS1.37.1 / 0.3.1：164件の自動テスト成功。Releaseビルド成功。
-- 1.37.1：内部API 273項目、コンパイル済みの呼び出し370件の署名を照合。
-- 1.37.3：内部API 275項目、同じDLLの呼び出し370件を照合。旧ScoreSaberの保存抑止APIも確認。
-- 1.37.4以降ではメニューの定義DLLが変わるためBS1.37.4に分離。追加設計は[1.37.4の境界](Replay-Release-1374-Boundary-Plan-ja.md)を参照。
-- Main / HMUIの非公開APIはBSIPA.AssemblyPublicizer.MSBuild 0.5.0でビルド用参照を生成。実ゲームのDLLは変更しません。生成したアクセス属性が組み込まれることも確認済みです。
-- 1.37系のHMDでの動作確認は未実施です。1.29.1で得られたユーザーテスト結果は移植先の動作保証には流用しません。
+- BS1.37.4 / 0.3.1：164件の自動テスト、Releaseビルドに成功。
+- BeatSaber.ViewSystemの参照を追加し、BSML 1.12のTableView / SliderプロパティとSaber.movementDataForLogicに変更。
+- 1.37.4：内部API 280項目を照合。1.39.1でも型232件・呼び出し370件の解決を確認。
+- メニューの定義DLL移動による分離の理由と方針は[1.37.4の追加設計](Replay-Release-1374-Boundary-Plan-ja.md)に記録。
+- HMDでの動作確認は未実施です。ビルド・DLLメタデータ照合を実機動作確認の代わりにはしません。
 
 ## 公開前の確認とリリース文
 

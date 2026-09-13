@@ -87,7 +87,7 @@ public sealed class Saber : MonoBehaviour
 {
     public Transform _saberBladeTopTransform, _saberBladeBottomTransform;
     public string saberType;
-    public SaberMovementData movementData = new SaberMovementData();
+    public SaberMovementData movementDataForLogic = new SaberMovementData();
     public void OverridePositionAndRotation(Vector3 position, Quaternion rotation) => transform.SetPositionAndRotation(position, rotation);
 }
 public static class TimeHelper { public static float time; }
@@ -112,9 +112,9 @@ public sealed class SaberMovementData
 public class SaberTrail : MonoBehaviour
 {
     public int ResetCalls;
-    public virtual void ResetTrailData() { ResetCalls++; throw new NullReferenceException("No native movementData in this trail"); }
+    public virtual void ResetTrailData() { ResetCalls++; throw new NullReferenceException("No native movementDataForLogic in this trail"); }
 }
-// Represents any provider that inherits SaberTrail without using native movementData.
+// Represents any provider that inherits SaberTrail without using native movementDataForLogic.
 public sealed class TransformSampledTrail : SaberTrail { }
 
 namespace VRUIControls

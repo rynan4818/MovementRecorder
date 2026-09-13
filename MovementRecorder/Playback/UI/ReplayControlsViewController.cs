@@ -59,7 +59,7 @@ namespace MovementRecorder.Playback.UI
         {
             if (_timeline != null)
             {
-                var handler = _timeline.slider.gameObject.AddComponent<SeekDragHandler>(); handler.Runtime = _runtime;
+                var handler = _timeline.Slider.gameObject.AddComponent<SeekDragHandler>(); handler.Runtime = _runtime;
                 UpdateDisplay(true);
             }
         }
@@ -71,9 +71,9 @@ namespace MovementRecorder.Playback.UI
                 _syncSlider = true;
                 try
                 {
-                    _timeline.slider.minValue = _runtime.StartTime; _timeline.slider.maxValue = _runtime.EndTime;
-                    _timeline.slider.numberOfSteps = Mathf.Max(2, Mathf.CeilToInt((_runtime.EndTime - _runtime.StartTime) * 10) + 1);
-                    _timeline.slider.SetNormalizedValue(Mathf.InverseLerp(_runtime.StartTime, _runtime.EndTime, _runtime.TimePosition), false);
+                    _timeline.Slider.minValue = _runtime.StartTime; _timeline.Slider.maxValue = _runtime.EndTime;
+                    _timeline.Slider.numberOfSteps = Mathf.Max(2, Mathf.CeilToInt((_runtime.EndTime - _runtime.StartTime) * 10) + 1);
+                    _timeline.Slider.SetNormalizedValue(Mathf.InverseLerp(_runtime.StartTime, _runtime.EndTime, _runtime.TimePosition), false);
                 }
                 finally { _syncSlider = false; }
             }

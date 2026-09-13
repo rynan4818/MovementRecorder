@@ -97,12 +97,12 @@ namespace MovementRecorder.Playback.UI
                         Detail = file.Error != null ? "Cannot load: " + file.Error : $"{file.EndTime - file.StartTime:0.0} s / {file.ObjectCount} objects / {file.Length / 1048576d:0.0} MiB",
                         Distance = distance.HasValue ? distance.Value.ToString("0.0", CultureInfo.CurrentCulture) + " m" : "" });
                 }
-                _list?.tableView.ReloadData();
+                _list?.TableView.ReloadData();
             }
             int selected = Array.IndexOf(_service.Files, _service.Selected);
             for (int i = 0; i < Rows.Count; i++) ((ReplayFileRow)Rows[i]).SetSelected(i == selected);
-            if (selected >= 0) _list?.tableView.SelectCellWithIdx(selected, false);
-            else _list?.tableView.ClearSelection();
+            if (selected >= 0) _list?.TableView.SelectCellWithIdx(selected, false);
+            else _list?.TableView.ClearSelection();
             foreach (string name in new[] { nameof(Chart), nameof(Status), nameof(DistanceHeading), nameof(Details), nameof(CanReplay), nameof(CanEdit),
                 nameof(CanCancel), nameof(SelectedFile), nameof(SelectionColor), nameof(InfoColor), nameof(ShowSourceAvatar), nameof(OffsetSourceAvatar),
                 nameof(ObserverX), nameof(ObserverY), nameof(ObserverZ) }) NotifyPropertyChanged(name);

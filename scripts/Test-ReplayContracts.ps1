@@ -50,7 +50,7 @@ function Check-Method([string]$type, [string]$method, [string]$returns = 'System
     $script:checks++
 }
 try {
-    foreach ($name in @('Main', 'DataModels', 'Tweening', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
+    foreach ($name in @('Main', 'DataModels', 'BeatSaber.ViewSystem', 'Tweening', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
         $null = Read-Assembly (Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll")
     }
     foreach ($name in @('BSML', 'SiraUtil', 'SongCore', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued', 'Camera2')) {
@@ -361,14 +361,14 @@ try {
                 $action[0].Parameters[1].ParameterType.FullName -notin @('System.Object', 'MovementRecorder.Playback.UI.ReplayFileRow')) {
                 $uiProblems.Add("custom-list '$($list.GetAttribute('id'))' selection must accept (TableView, row object), not an integer index")
             } else { $checks++ }
-            Check-Field 'BeatSaberMarkupLanguage.Components.CustomCellListTableData' 'tableView' 'HMUI.TableView'
-            Check-Method 'BeatSaberMarkupLanguage.Components.CustomCellListTableData' 'get_data' 'System.Collections.IList'
+            Check-Method 'BeatSaberMarkupLanguage.Components.CustomCellListTableData' 'get_TableView' 'HMUI.TableView'
+            Check-Method 'BeatSaberMarkupLanguage.Components.CustomCellListTableData' 'get_Data' 'System.Collections.IList'
         }
         if ($uiProblems.Count -gt 0) { throw ($uiProblems -join '; ') }
     }
     $reader = [IO.StreamReader]::new($resources['MovementRecorder.manifest.json'].GetResourceStream())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-    if ($manifest.gameVersion -ne '1.37.1') { throw 'gameVersion was changed' }
+    if ($manifest.gameVersion -ne '1.37.4') { throw 'gameVersion was changed' }
     $checks++
     if ($manifest.version -ne '0.3.1') { throw 'Plugin version was changed' }
     if ($manifest.dependsOn.PSObject.Properties.Name -contains 'Camera2' -or $manifest.dependsOn.PSObject.Properties.Name -contains 'CameraPlus') {

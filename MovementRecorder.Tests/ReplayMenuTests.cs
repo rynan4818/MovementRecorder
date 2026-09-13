@@ -214,7 +214,7 @@ namespace MovementRecorder.Tests
             GameAccess.Set(next, "_infoText", info); GameAccess.Set(next, "_distanceText", distance);
             GameAccess.Call(previous, "Parsed");
             _service.SelectFile(1);
-            Assert.Equal(rows, View.Rows); Assert.Equal(0, list.tableView.Reloads);
+            Assert.Equal(rows, View.Rows); Assert.Equal(0, list.TableView.Reloads);
             Assert.DoesNotContain("Selected", previousInfo.text); Assert.Equal(Color.white, previousInfo.color);
             Assert.StartsWith("Selected", info.text); Assert.Contains(next.Label, info.text); Assert.Contains(next.Detail, info.text);
             Assert.DoesNotContain("\n", info.text); Assert.NotEqual(Color.white, info.color); Assert.Equal(info.color, distance.color);
