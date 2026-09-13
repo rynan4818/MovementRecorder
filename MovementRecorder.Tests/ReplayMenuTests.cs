@@ -26,6 +26,7 @@ namespace MovementRecorder.Tests
         private readonly ReplaySession _session;
         private readonly ReplayMenuService _service;
         private readonly RecordData _record = new RecordData();
+        private readonly BeatmapLevelsModel _levels = new BeatmapLevelsModel();
         private readonly MenuTransitionsHelper _transitions = new MenuTransitionsHelper();
         private readonly StandardLevelDetailViewController _chart;
         private ReplayFileFlowCoordinator Flow => GameAccess.Get<ReplayFileFlowCoordinator>(_service, "_flow");
@@ -39,10 +40,11 @@ namespace MovementRecorder.Tests
             BeatSaberUI.MainFlowCoordinator = new GameObject("Main menu").AddComponent<HMUI.FlowCoordinator>();
             BeatSaberUI.PendingDismiss = null; BeatSaberUI.Presented = null;
             _chart = new GameObject("Chart view").AddComponent<StandardLevelDetailViewController>();
-            _chart.selectedDifficultyBeatmap = new TestBeatmap();
+            _chart.beatmapLevel = new BeatmapLevel();
+            _chart.beatmapKey = new BeatmapKey("song", new BeatmapCharacteristicSO(), BeatmapDifficulty.Expert);
             WriteFile("20260901120000-first.mvrec"); WriteFile("20260902120000-second.mvrec");
             _session = new ReplaySession();
-            _service = new ReplayMenuService(_session, _record, new ReplaySaveGuards(), _transitions, new GameplaySetupViewController());
+            _service = new ReplayMenuService(_session, _record, new ReplaySaveGuards(), _transitions, new GameplaySetupViewController(), _levels, new EnvironmentsListModel());
             _service.Initialize();
         }
         public void Dispose()
@@ -161,7 +163,7 @@ namespace MovementRecorder.Tests
         [Fact] public async Task ChangedChartAfterDismissalReturnsToMenuWithoutStarting()
         {
             await Open(); var run = _service.StartReplay(); await WaitUntil(() => BeatSaberUI.PendingDismiss != null);
-            _chart.selectedDifficultyBeatmap = new TestBeatmap { difficulty = BeatmapDifficulty.Hard };
+            _chart.beatmapKey = new BeatmapKey("song", new BeatmapCharacteristicSO(), BeatmapDifficulty.Hard);
             BeatSaberUI.PendingDismiss(); await run;
             Assert.Equal(0, _transitions.Starts); Assert.False(_session.IsActive); Assert.True(Flow.Opened);
             Assert.Null(_service.Selected); Assert.False(_service.CanReplay); Assert.Contains("The selected map has changed", _service.Status);
@@ -173,6 +175,24 @@ namespace MovementRecorder.Tests
             Assert.True(Flow.Opened); Assert.False(_service.Busy); Assert.Equal(0, _transitions.Starts);
             Assert.Contains("Cannot start replay", _service.Status); Assert.Null(BeatSaberUI.PendingDismiss);
             Assert.Null(_service.Selected); Assert.False(_service.CanReplay);
+        }
+
+        [Fact] public async Task CancellingBeatmapLoadCannotStartLater()
+        {
+            await Open();
+            var data = new TaskCompletionSource<LoadBeatmapLevelDataResult>(); _levels.Loading = data.Task;
+            var run = _service.StartReplay(); await WaitUntil(() => _levels.LoadRequests > 0);
+            Assert.True(_service.CanCancel); _service.CancelLoad(); await run;
+            data.SetResult(new LoadBeatmapLevelDataResult { beatmapLevelData = new TestLevelData() });
+            Assert.Equal(0, _transitions.Starts); Assert.False(_session.IsActive); Assert.True(Flow.Opened);
+        }
+
+        [Fact] public async Task FailedBeatmapLoadKeepsMenuOpen()
+        {
+            await Open(); _levels.Loading = Task.FromResult(new LoadBeatmapLevelDataResult { isError = true });
+            await _service.StartReplay();
+            Assert.Contains("Cannot load the selected map", _service.Status);
+            Assert.Equal(0, _transitions.Starts); Assert.False(_session.IsActive); Assert.True(Flow.Opened);
         }
 
         [Fact] public async Task FileRemovedDuringDismissalReturnsToMenuWithoutStarting()

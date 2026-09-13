@@ -71,6 +71,7 @@ public sealed class PlayerTransforms : MonoBehaviour { public Transform _headTra
 public interface IVRPlatformHelper { bool GetNodePose(XRNode node, int index, out Vector3 position, out Quaternion rotation); }
 public sealed class VRController : MonoBehaviour
 {
+    public bool mouseMode;
     public XRNode node; public int nodeIdx; public object _transformOffset;
     public IVRPlatformHelper Platform;
     public int TrackingUpdates;
@@ -120,18 +121,16 @@ namespace VRUIControls
 {
     public sealed class VRPointer : MonoBehaviour
     {
-        public VRController _leftVRController, _rightVRController, _vrController;
+        public VRController _leftVRController, _rightVRController, _lastSelectedVrController;
         public object _laserPointerPrefab, _cursorPrefab;
         public float _defaultLaserPointerLength = 10, _laserPointerWidth = .01f;
-        public VRController vrController => _vrController;
-        public int LaserResets;
-        public void DestroyLaserAndHit() { LaserResets++; }
+        public VRController lastSelectedVrController => _lastSelectedVrController;
     }
     public sealed class VRInputModule : MonoBehaviour
     {
         public VRPointer _vrPointer;
         public object _rumblePreset;
-        public bool useMouseForPressInput;
+
         public int Clears;
         public void ClearSelection() { Clears++; }
     }

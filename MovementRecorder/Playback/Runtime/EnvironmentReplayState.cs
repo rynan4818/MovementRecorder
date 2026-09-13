@@ -52,7 +52,7 @@ namespace MovementRecorder.Playback.Runtime
         }
         private void Capture(object owner)
         {
-            if (owner == null || owner.GetType().Assembly != typeof(BeatmapCallbacksController).Assembly || !_captured.Add(owner)) return;
+            if (owner == null || !IsStateAssembly(owner.GetType()) || !_captured.Add(owner)) return;
             if (owner is Tween tween) _tweens.Add(tween);
             if (owner is Behaviour behaviour) _enabled[behaviour] = behaviour.enabled;
             if (owner is TrackLaneRing ring) _rings.Add(ring);
@@ -60,7 +60,7 @@ namespace MovementRecorder.Playback.Runtime
                 _ringEffects[ringsEffect] = GameAccess.Get<List<TrackLaneRingsRotationEffect.RingRotationEffect>>(ringsEffect, "_activeRingRotationEffects")
                     .Select(r => new TrackLaneRingsRotationEffect.RingRotationEffect { progressPos = r.progressPos, rotationAngle = r.rotationAngle,
                         rotationStep = r.rotationStep, rotationFlexySpeed = r.rotationFlexySpeed, rotationPropagationSpeed = r.rotationPropagationSpeed }).ToArray();
-            for (Type type = owner.GetType(); type != null && type.Assembly == typeof(BeatmapCallbacksController).Assembly; type = type.BaseType)
+            for (Type type = owner.GetType(); type != null && IsStateAssembly(type); type = type.BaseType)
                 foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                 {
                     object value = field.GetValue(owner); Type kind = field.FieldType;
@@ -84,6 +84,7 @@ namespace MovementRecorder.Playback.Runtime
                         _values.Add(new Value { Owner = owner, Field = field, Initial = value });
                 }
         }
+        private static bool IsStateAssembly(Type type) => type.Assembly == typeof(BeatmapCallbacksController).Assembly || type.Assembly == typeof(Tween).Assembly;
         private static bool IsValue(Type type) => type.IsPrimitive || type.IsEnum || type == typeof(Vector3) || type == typeof(Vector4) ||
             type == typeof(Vector2) || type == typeof(Quaternion) || type == typeof(Color);
         public void Reset()

@@ -50,10 +50,10 @@ function Check-Method([string]$type, [string]$method, [string]$returns = 'System
     $script:checks++
 }
 try {
-    foreach ($name in @('Main', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
+    foreach ($name in @('Main', 'DataModels', 'Tweening', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'Unity.TextMeshPro', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule', 'IPA.Loader')) {
         $null = Read-Assembly (Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll")
     }
-    foreach ($name in @('BSML', 'SiraUtil', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued', 'Camera2')) {
+    foreach ($name in @('BSML', 'SiraUtil', 'SongCore', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued', 'Camera2')) {
         $path = Join-Path $GameDirectory "Plugins\$name.dll"
         if (Test-Path -LiteralPath $path) { $null = Read-Assembly $path }
     }
@@ -97,7 +97,7 @@ try {
         BeatmapObjectExecutionRatingsRecorder = @('_beatmapObjectExecutionRatings', '_hitObstacles')
         GoodCutScoringElement = @('_cutScoreBuffer')
         CutScoreBuffer = @('_saberSwingRatingCounter')
-        'VRUIControls.VRPointer' = @('_leftVRController', '_rightVRController', '_vrController')
+        'VRUIControls.VRPointer' = @('_leftVRController', '_rightVRController', '_lastSelectedVrController')
         VRController = @('_transformOffset')
         'Tweening.TweeningManager' = @('_activeTweens', '_ownerByTween')
         TrackLaneRingsRotationEffect = @('_activeRingRotationEffects')
@@ -117,10 +117,10 @@ try {
     Check-Field 'VRUIControls.VRPointer' '_laserPointerWidth' 'System.Single'
     Check-Field 'VRUIControls.VRInputModule' '_vrPointer' 'VRUIControls.VRPointer'
     Check-Field 'VRUIControls.VRInputModule' '_rumblePreset' 'Libraries.HM.HMLib.VR.HapticPresetSO'
-    Check-Field 'VRUIControls.VRInputModule' '_hapticFeedbackController' 'HapticFeedbackController'
+    Check-Field 'VRUIControls.VRInputModule' '_hapticFeedbackManager' 'HapticFeedbackManager'
     Check-Method 'VRUIControls.VRInputModule' 'ClearSelection'
-    Check-Method 'VRUIControls.VRInputModule' 'set_useMouseForPressInput'
-    Check-Method 'VRUIControls.VRPointer' 'DestroyLaserAndHit'
+    Check-Method 'VRController' 'set_mouseMode'
+    Check-Method 'VRUIControls.VRPointer' 'HideLaserPointersAndCursors'
     Check-Method 'VRController' 'Update'
     Check-Method 'UnityEngine.EventSystems.EventSystem' 'get_current' 'UnityEngine.EventSystems.EventSystem'
     Check-Method 'UnityEngine.EventSystems.EventSystem' 'set_current'
@@ -362,15 +362,15 @@ try {
                 $uiProblems.Add("custom-list '$($list.GetAttribute('id'))' selection must accept (TableView, row object), not an integer index")
             } else { $checks++ }
             Check-Field 'BeatSaberMarkupLanguage.Components.CustomCellListTableData' 'tableView' 'HMUI.TableView'
-            Check-Field 'BeatSaberMarkupLanguage.Components.CustomCellListTableData' 'data' 'System.Collections.Generic.List`1<System.Object>'
+            Check-Method 'BeatSaberMarkupLanguage.Components.CustomCellListTableData' 'get_data' 'System.Collections.IList'
         }
         if ($uiProblems.Count -gt 0) { throw ($uiProblems -join '; ') }
     }
     $reader = [IO.StreamReader]::new($resources['MovementRecorder.manifest.json'].GetResourceStream())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-    if ($manifest.gameVersion -ne '1.29.0') { throw 'gameVersion was changed' }
+    if ($manifest.gameVersion -ne '1.37.1') { throw 'gameVersion was changed' }
     $checks++
-    if ($manifest.version -ne '0.3.0') { throw 'Plugin version was changed' }
+    if ($manifest.version -ne '0.3.1') { throw 'Plugin version was changed' }
     if ($manifest.dependsOn.PSObject.Properties.Name -contains 'Camera2' -or $manifest.dependsOn.PSObject.Properties.Name -contains 'CameraPlus') {
         throw 'Camera MODs must remain optional'
     }

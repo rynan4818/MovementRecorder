@@ -13,6 +13,7 @@ $expected = [ordered]@{
     'Docs/MovementRecorder/LICENSE' = Join-Path $repo 'LICENSE'
     'Docs/MovementRecorder/THIRD-PARTY-NOTICES.md' = Join-Path $repo 'THIRD-PARTY-NOTICES.md'
     'Docs/MovementRecorder/licenses/LiteDB-LICENSE.txt' = Join-Path $repo 'licenses\LiteDB-LICENSE.txt'
+    'Docs/MovementRecorder/licenses/BSIPA.AssemblyPublicizer-LICENSE.txt' = Join-Path $repo 'licenses\BSIPA.AssemblyPublicizer-LICENSE.txt'
     'Docs/MovementRecorder/licenses/System.Buffers-LICENSE.txt' = Join-Path $repo 'licenses\System.Buffers-LICENSE.txt'
     'Docs/MovementRecorder/licenses/System.Buffers-THIRD-PARTY-NOTICES.txt' = Join-Path $repo 'licenses\System.Buffers-THIRD-PARTY-NOTICES.txt'
 }

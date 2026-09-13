@@ -1,5 +1,4 @@
-﻿using MovementRecorder.HarmonyPatches;
-using MovementRecorder.Utility;
+﻿using MovementRecorder.Utility;
 using MovementRecorder.Configuration;
 using Newtonsoft.Json;
 using System;
@@ -36,6 +35,7 @@ namespace MovementRecorder.Models
         public int _difficultyNum;
         public float _startSongTime;
         public bool _wipLevel;
+        public string _customLevelPath;
         public int _transformSize = 0;
         public int _recordCount;
         public double _initializeTime;
@@ -80,6 +80,7 @@ namespace MovementRecorder.Models
         public void ResetCount()
         {
             this._wipLevel = false;
+            this._customLevelPath = string.Empty;
             this._startSongTime = 0;
             this._initializeTime = 0;
             this._recordCount = 0;
@@ -107,7 +108,7 @@ namespace MovementRecorder.Models
             return this._saveTaskCheck;
         }
 
-        public bool InitializeData(int recordSize, IDifficultyBeatmap difficultyBeatmap, float songTime)
+        public bool InitializeData(int recordSize, GameplayCoreSceneSetupData sceneSetupData, float songTime)
         {
             var timaer = new Stopwatch();
             timaer.Start();
@@ -116,16 +117,19 @@ namespace MovementRecorder.Models
             this.ResetData();
             this.ResetCount();
             this._startSongTime = songTime;
-            this._levelID = difficultyBeatmap.level.levelID;
-            this._songName = difficultyBeatmap.level.songName;
-            this._serializedName = difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
-            this._difficulty = difficultyBeatmap.difficulty.Name();
-            this._difficultyNum = (int)difficultyBeatmap.difficulty;
+            var beatmapKey = sceneSetupData.beatmapKey;
+            var beatmapLevel = sceneSetupData.beatmapLevel;
+            this._levelID = beatmapKey.levelId;
+            this._songName = beatmapLevel.songName;
+            this._serializedName = beatmapKey.beatmapCharacteristic.serializedName;
+            this._difficulty = beatmapKey.difficulty.Name();
+            this._difficultyNum = (int)beatmapKey.difficulty;
             foreach (var customWIPLevel in SongCore.Loader.CustomWIPLevels)
             {
                 if (customWIPLevel.Value.levelID == this._levelID)
                 {
                     this._wipLevel = true;
+                    this._customLevelPath = SongCore.Collections.GetLoadedSaveData(this._levelID)?.customLevelFolderInfo.folderPath ?? string.Empty;
                     break;
                 }
             }
@@ -283,9 +287,9 @@ namespace MovementRecorder.Models
             //Restart用にWaitするので、孫メソッド中まで全てのawaitで.ConfigureAwait(false)しないとデッドロックするので注意
             var timaer = new Stopwatch();
             timaer.Start();
-            var savePath = Path.Combine(GetCoverImageAsyncPatch.CustomLevelPath, MovementRecorderDirectory);
-            if (!this._wipLevel)
-                savePath = Path.Combine(IPA.Utilities.UnityGame.UserDataPath, MovementRecorderDirectory);
+            var savePath = Path.Combine(IPA.Utilities.UnityGame.UserDataPath, MovementRecorderDirectory);
+            if (this._wipLevel && Directory.Exists(this._customLevelPath))
+                savePath = Path.Combine(this._customLevelPath, MovementRecorderDirectory);
             if (!Directory.Exists(savePath))
                 Directory.CreateDirectory(savePath);
             var filename = $"{DateTime.Now:yyyyMMddHHmmss}-{this._songName}-{this._difficulty}-{this._serializedName}-{(int)this.GetLastRecordTiem()}s.mvrec";

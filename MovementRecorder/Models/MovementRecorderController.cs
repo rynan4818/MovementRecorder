@@ -70,7 +70,7 @@ namespace MovementRecorder.Models
             if (PluginConfig.Instance.notDisposeMemory && songLength < minLength)
                 songLength = minLength;
             var recordSize = (int)(songLength / this._recordInterval) + 100;
-            var resetRsult = this._recordData.InitializeData(recordSize, this._gameplayCoreSceneSetupData.difficultyBeatmap, this._audioTimeSource.songTime);
+            var resetRsult = this._recordData.InitializeData(recordSize, this._gameplayCoreSceneSetupData, this._audioTimeSource.songTime);
             if (!resetRsult)
                 return;
             Plugin.Log?.Info($"Record Initialize Size:{recordSize} Initialize Time:{this._recordData._initializeTime}ms");

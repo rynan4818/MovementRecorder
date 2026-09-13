@@ -1,4 +1,4 @@
-﻿using BeatSaberMarkupLanguage.Attributes;
+using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.GameplaySetup;
 using MovementRecorder.Configuration;
 using MovementRecorder.Models;
@@ -16,6 +16,7 @@ namespace MovementRecorder.Views
         private bool _disposedValue;
         private RecordData _recordData;
         private ReplayMenuService _replay;
+        private GameplaySetup _gameplaySetup;
         private SynchronizationContext _uiContext;
         [UIAction("open-replay")] private void OpenReplay() { _replay.OpenMenu(); }
         public static readonly string TabName = "MOVEMENT RECORDER";
@@ -31,15 +32,16 @@ namespace MovementRecorder.Views
         public readonly TextMeshProUGUI recorderLog;
 
         [Inject]
-        private void Constractor(RecordData recordData, ReplayMenuService replay)
+        private void Constractor(RecordData recordData, ReplayMenuService replay, GameplaySetup gameplaySetup)
         {
             this._recordData = recordData;
             _replay = replay;
+            _gameplaySetup = gameplaySetup;
         }
         public void Initialize()
         {
             _uiContext = SynchronizationContext.Current;
-            GameplaySetup.instance.AddTab(TabName, this.ResourceName, this, MenuType.Solo);
+            _gameplaySetup.AddTab(TabName, this.ResourceName, this, MenuType.Solo);
             this.avatarMovementChoices.Add(PluginConfig.NoneCapture);
             this.saberMovementChoices.Add(PluginConfig.NoneCapture);
             this.otherMovementChoices.Add(PluginConfig.NoneCapture);
@@ -61,7 +63,7 @@ namespace MovementRecorder.Views
                 if (disposing)
                 {
                     this._recordData.recorderLog -= this.OnRecorderLog;
-                    GameplaySetup.instance?.RemoveTab(TabName);
+                    _gameplaySetup?.RemoveTab(TabName);
                 }
                 this._disposedValue = true;
             }

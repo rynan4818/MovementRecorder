@@ -5,12 +5,13 @@
 
 0.3系では、Beat Saber内で記録したモデルを第三者視点から鑑賞できます。**MOVEMENT RECORDER → Replay** でファイルを選び、**Start Replay** を押します。一時停止・シーク、表情同期、Camera2のREPLAY連携、コピー元アバターの表示・オフセット設定に対応します。[リプレイの使い方](docs/Replay-ja.md) を参照してください。
 
-現在のブランチは **BS1.29.1 / MovementRecorder 0.3.0 / Beat Saber 1.29.0-1.29.1** です。
+現在のブランチは **BS1.37.1 / MovementRecorder 0.3.1 / Beat Saber 1.37.1-1.37.3** です。
 
 | Beat Saber | MovementRecorder | ブランチ |
 | --- | --- | --- |
 | 1.29.0-1.29.1 | 0.3.0 | BS1.29.1 |
-| 1.37.1-1.39.1 | 0.3.1 | BS1.37.1 |
+| 1.37.1-1.37.3 | 0.3.1 | BS1.37.1 |
+| 1.37.4-1.39.1 | 0.3.1 | BS1.37.4 |
 | 1.40.0-1.40.8 | 0.3.2 | BS1.40.0 |
 | 1.42.0-1.44.1 | 0.3.3 | main |
 
@@ -24,6 +25,7 @@
   - [NalulunaAvatars](https://nalulululuna.fanbox.cc/)
 - セイバー
   - [Saber Factory](https://github.com/ToniMacaroni/SaberFactory)
+  - [CustomSabersLite](https://github.com/affedV/CustomSabersLite)
   - [CustomSaber](https://nalulululuna.fanbox.cc/)
   - [NalulunaSaber](https://nalulululuna.fanbox.cc/)
 

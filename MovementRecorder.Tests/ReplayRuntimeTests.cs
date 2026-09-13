@@ -152,7 +152,7 @@ namespace MovementRecorder.Tests
             var right = Child(menu, "UI right").AddComponent<VRController>(); right.node = XRNode.RightHand;
             Mesh(Child(left.gameObject, "Controller body")); Mesh(Child(right.gameObject, "Controller body"));
             var pointer = Child(menu, "VRPointer").AddComponent<VRPointer>(); pointer.gameObject.AddComponent<EventSystem>();
-            pointer._leftVRController = left; pointer._rightVRController = right; pointer._vrController = right;
+            pointer._leftVRController = left; pointer._rightVRController = right; pointer._lastSelectedVrController = right;
             pointer._laserPointerPrefab = new object(); pointer._cursorPrefab = new object();
             var module = pointer.gameObject.AddComponent<VRInputModule>(); module._vrPointer = pointer; module._rumblePreset = new object();
             var previous = new GameObject("Previous EventSystem").AddComponent<EventSystem>(); EventSystem.current = previous;
@@ -180,7 +180,7 @@ namespace MovementRecorder.Tests
             Assert.Equal(fpfc ? 0 : 2, scene.platform.Reads);
             rig.Dispose(); rig.Dispose();
             Assert.True(scene.main.camera.enabled); Assert.Same(scene.right, scene.pointer._rightVRController);
-            Assert.Same(scene.right, scene.pointer.vrController); Assert.Equal(1, observer.DestroyCalls);
+            Assert.Same(scene.right, scene.pointer.lastSelectedVrController); Assert.Equal(1, observer.DestroyCalls);
             Assert.Same(scene.previous, EventSystem.current); Assert.False(scene.right.Destroyed);
             Application.BeforeRender(); // No remaining callback may access the disposed camera.
         }
@@ -250,10 +250,10 @@ namespace MovementRecorder.Tests
             Assert.Equal(75, rig.Camera.fieldOfView); Assert.Equal(2, rig.Camera.aspect);
             SamePosition(new Vector3(3, 2, -1), rig.Camera.transform.position);
             SamePosition(rig.Camera.transform.position, pointer._rightVRController.transform.position);
-            Assert.False(pointer._rightVRController.enabled); Assert.True(pointer.GetComponent<VRInputModule>().useMouseForPressInput);
+            Assert.False(pointer._rightVRController.enabled); Assert.True(pointer._rightVRController.mouseMode);
             scene.fpfc.Enabled = false; scene.main.camera.stereoTargetEye = StereoTargetEyeMask.Both; rig.Update();
             Assert.Equal(reads + 1, scene.platform.Reads); Assert.True(pointer._rightVRController.enabled);
-            Assert.False(pointer.GetComponent<VRInputModule>().useMouseForPressInput);
+            Assert.False(pointer._rightVRController.mouseMode);
             Assert.Equal(StereoTargetEyeMask.Both, rig.Camera.stereoTargetEye);
             SamePosition(scene.platform.Position, scene.main.transform.localPosition);
         }
@@ -288,7 +288,7 @@ namespace MovementRecorder.Tests
                 rig.SetControlsVisible(false); rig.SetControlsVisible(false);
                 Assert.Same(scene.previous, EventSystem.current); Assert.False(nativeEvents.enabled);
                 Assert.False(pointer.gameObject.activeInHierarchy); Assert.False(pointer._leftVRController.gameObject.activeInHierarchy);
-                Assert.Equal(i, module.Clears); Assert.Equal(i, pointer.LaserResets);
+                Assert.Equal(i, module.Clears);
             }
         }
         [Theory] [InlineData(true, true)] [InlineData(true, false)] [InlineData(false, true)] [InlineData(false, false)]

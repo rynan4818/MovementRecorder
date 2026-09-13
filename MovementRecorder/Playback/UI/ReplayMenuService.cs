@@ -23,6 +23,8 @@ namespace MovementRecorder.Playback.UI
         private readonly ReplaySaveGuards _guards;
         private readonly MenuTransitionsHelper _transitions;
         private readonly GameplaySetupViewController _setup;
+        private readonly BeatmapLevelsModel _levels;
+        private readonly EnvironmentsListModel _environments;
         private Task<MovementFileCatalog> _catalog;
         private HeadDistanceReader _distance;
         private CancellationTokenSource _scanCancellation, _loadCancellation;
@@ -30,7 +32,13 @@ namespace MovementRecorder.Playback.UI
         private float _nextPoll;
         private readonly Queue<float> _refreshTimes = new Queue<float>();
         private ReplayFileFlowCoordinator _flow;
-        private IDifficultyBeatmap _chart;
+        private sealed class SelectedChart
+        {
+            public readonly BeatmapKey Key;
+            public readonly BeatmapLevel Level;
+            public SelectedChart(BeatmapKey key, BeatmapLevel level) { Key = key; Level = level; }
+        }
+        private SelectedChart _chart;
         private string _chartKey;
         private bool _disposed;
         public event Action Changed;
@@ -46,14 +54,14 @@ namespace MovementRecorder.Playback.UI
         public bool CanReplay => CanEdit && _flow?.Opened == true && Selected?.Error == null && Selected?.FrameCount > 0 &&
             Selected.Confirmed && Selected.ChartKey == _chartKey;
         public ReplaySession Session => _session;
-        private string ChartScope => _chart == null ? "" : _chart.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName + " / " +
-            (_chart.difficulty == BeatmapDifficulty.ExpertPlus ? "Expert+" : _chart.difficulty.ToString());
+        private string ChartScope => _chart == null ? "" : _chart.Key.beatmapCharacteristic.serializedName + " / " +
+            (_chart.Key.difficulty == BeatmapDifficulty.ExpertPlus ? "Expert+" : _chart.Key.difficulty.ToString());
         public string ChartText => _chart == null ? "Select a song and difficulty in Solo." :
-            _chart.level.songName + " / " + ChartScope;
+            _chart.Level.songName + " / " + ChartScope;
 
         public ReplayMenuService(ReplaySession session, RecordData record, ReplaySaveGuards guards,
-            MenuTransitionsHelper transitions, GameplaySetupViewController setup)
-        { _session = session; _record = record; _guards = guards; _transitions = transitions; _setup = setup; }
+            MenuTransitionsHelper transitions, GameplaySetupViewController setup, BeatmapLevelsModel levels, EnvironmentsListModel environments)
+        { _session = session; _record = record; _guards = guards; _transitions = transitions; _setup = setup; _levels = levels; _environments = environments; }
         public void Initialize()
         {
             RecordDirectory = Path.Combine(IPA.Utilities.UnityGame.UserDataPath, "MovementRecorder");
@@ -75,11 +83,12 @@ namespace MovementRecorder.Playback.UI
         {
             if (!_session.IsActive) CancelLoad();
         }
-        private static IDifficultyBeatmap CurrentChart()
+        private static SelectedChart CurrentChart()
         {
             var views = Resources.FindObjectsOfTypeAll<StandardLevelDetailViewController>()
                 .Where(v => v.gameObject.scene.IsValid() && v.gameObject.activeInHierarchy).ToArray();
-            return views.Length == 1 ? views[0].selectedDifficultyBeatmap : null;
+            if (views.Length != 1 || views[0].beatmapLevel == null || views[0].beatmapKey.beatmapCharacteristic == null) return null;
+            return new SelectedChart(views[0].beatmapKey, views[0].beatmapLevel);
         }
         public void Tick()
         {
@@ -100,9 +109,9 @@ namespace MovementRecorder.Playback.UI
             if (_chart != null && _refreshTimes.Count > 0 && _refreshTimes.Peek() <= Time.unscaledTime && !Busy)
             { _refreshTimes.Dequeue(); _ = Refresh(false); }
         }
-        private static string KeyOf(IDifficultyBeatmap chart) => chart == null ? null :
-            ChartIdentity.Key(chart.level.levelID, chart.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName, (int)chart.difficulty);
-        private void SetChart(IDifficultyBeatmap chart)
+        private static string KeyOf(SelectedChart chart) => chart == null ? null :
+            ChartIdentity.Key(chart.Key.levelId, chart.Key.beatmapCharacteristic.serializedName, (int)chart.Key.difficulty);
+        private void SetChart(SelectedChart chart)
         {
             string key = KeyOf(chart);
             _chart = chart;
@@ -124,8 +133,8 @@ namespace MovementRecorder.Playback.UI
         {
             yield return RecordDirectory;
             // Resolve from the selected chart, never from the last cover-image request.
-            if (_chart?.level is CustomPreviewBeatmapLevel custom && !string.IsNullOrEmpty(custom.customLevelPath))
-                yield return Path.Combine(custom.customLevelPath, "MovementRecorder");
+            string path = _chart == null ? null : SongCore.Collections.GetLoadedSaveData(_chart.Key.levelId)?.customLevelFolderInfo.folderPath;
+            if (!string.IsNullOrEmpty(path)) yield return Path.Combine(path, "MovementRecorder");
         }
         public async Task Refresh(bool rebuild)
         {
@@ -144,7 +153,7 @@ namespace MovementRecorder.Playback.UI
                 if (Selected != null) Selected = Files.FirstOrDefault(f => f.SameSource(Selected));
                 Status = Files.Length == 0 ? "No recordings found for " + ChartScope + "." : ChartScope + ": " + Files.Length + " recordings. Scores and play history are not saved.";
                 if (snapshot.Warnings.Length > 0) Status += "\nSome folders could not be scanned.";
-                Plugin.Log?.Debug($"Replay catalog: {_chart.level.levelID}, {ChartScope}, matches={Files.Length}, files={snapshot.Files.Length}, headers={snapshot.HeadersRead}, cache={snapshot.CacheHits}");
+                Plugin.Log?.Debug($"Replay catalog: {_chart.Key.levelId}, {ChartScope}, matches={Files.Length}, files={snapshot.Files.Length}, headers={snapshot.HeadersRead}, cache={snapshot.CacheHits}");
                 Notify();
             }
             catch (OperationCanceledException) { }
@@ -171,9 +180,9 @@ namespace MovementRecorder.Playback.UI
             Busy = true; Status = "Loading recording…"; Notify();
             try
             {
-                if (chart.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName != "Standard")
+                if (chart.Key.beatmapCharacteristic.serializedName != "Standard")
                     throw new InvalidOperationException("This version supports two-saber Standard maps only.");
-                var requirements = SongCore.Collections.RetrieveDifficultyData(chart)?.additionalDifficultyData?._requirements;
+                var requirements = SongCore.Collections.RetrieveDifficultyData(chart.Level, chart.Key)?.additionalDifficultyData?._requirements;
                 if (requirements?.Length > 0)
                     throw new InvalidOperationException("This version does not support maps with required extensions: " + string.Join(", ", requirements));
                 _guards.Prepare(); ReplayRuntimeHooks.Prepare();
@@ -186,6 +195,12 @@ namespace MovementRecorder.Playback.UI
                 token.ThrowIfCancellationRequested();
                 if (_disposed || generation != _loadGeneration || _chartKey != key) return;
                 if (!clip.Header.Settings.Any(s => s.type == "Saber")) throw new InvalidOperationException("Select a recording that includes both sabers.");
+                var loading = _levels.LoadBeatmapLevelDataAsync(chart.Key.levelId, BeatmapLevelDataVersion.Original, token);
+                await WaitWithCancellation(loading, token);
+                var loaded = await loading;
+                if (loaded.isError || loaded.beatmapLevelData == null) throw new InvalidOperationException("Cannot load the selected map's data.");
+                token.ThrowIfCancellationRequested();
+                if (_disposed || generation != _loadGeneration || _chartKey != key) return;
                 Status = "Starting replay…"; Notify();
                 // The underlying chart view is inactive while the menu is presented.
                 // Read it again only after dismissal, and keep cancellation valid through the animation.
@@ -206,9 +221,10 @@ namespace MovementRecorder.Playback.UI
                 _guards.Prepare();
                 _session.Begin(clip, showSourceAvatar, offsetSourceAvatar);
                 var modifiers = _setup.gameplayModifiers.CopyWith(noFailOn0Energy: _session.NoFail, songSpeed: GameplayModifiers.SongSpeed.Normal);
-                _transitions.StartStandardLevel(ReplaySession.GameMode, chart, chart.level, _setup.environmentOverrideSettings,
-                    _setup.colorSchemesSettings.GetOverrideColorScheme(), modifiers, _setup.playerSettings.CopyWith(autoRestart: false),
-                    new PracticeSettings { startSongTime = 0, songSpeedMul = 1 }, "Song Selection", false, true, null,
+                _transitions.StartStandardLevel(ReplaySession.GameMode, chart.Key, chart.Level, loaded.beatmapLevelData, _setup.environmentOverrideSettings,
+                    _setup.colorSchemesSettings.GetOverrideColorScheme(), chart.Level.GetColorScheme(chart.Key.beatmapCharacteristic, chart.Key.difficulty),
+                    modifiers, _setup.playerSettings.CopyWith(autoRestart: false),
+                    new PracticeSettings { startSongTime = 0, songSpeedMul = 1 }, _environments, "Song Selection", false, true, null, null,
                     (setup, result) => { _session.Finish(); Status = "Replay finished. Scores and play history were not saved."; Notify(); }, null);
             }
             catch (OperationCanceledException) { }

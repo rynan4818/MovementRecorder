@@ -45,6 +45,27 @@
     <DisableZipRelease>True</DisableZipRelease>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DataModels">
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\DataModels.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AdditionalContentModel.Interfaces">
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\AdditionalContentModel.Interfaces.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="netstandard" />
+    <Reference Include="BGLib.UnityExtension">
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BGLib.UnityExtension.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BGLib.DotnetExtension">
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BGLib.DotnetExtension.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Tweening">
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Tweening.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Colors">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Colors.dll</HintPath>
       <Private>False</Private>
@@ -112,7 +133,7 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Main">
+    <Reference Include="Main" Publicize="true">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Main.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -120,7 +141,7 @@
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\HMLib.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="HMUI">
+    <Reference Include="HMUI" Publicize="true">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\HMUI.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -171,7 +192,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HarmonyPatches\GetCoverImageAsyncPatch.cs" />
     <Compile Include="HarmonyPatches\StartSongPatch.cs" />
     <Compile Include="Installers\MovementRecorderAppInstaller.cs" />
     <Compile Include="Installers\MovementRecorderMenuInstaller.cs" />
@@ -199,6 +219,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="LiteDB" Version="5.0.21" GeneratePathProperty="true" />
+    <PackageReference Include="BSIPA.AssemblyPublicizer.MSBuild" Version="0.5.0" PrivateAssets="all" />
     <PackageReference Include="System.Buffers" Version="4.5.1" GeneratePathProperty="true" />
     <PackageReference Include="BeatSaberModdingTools.Tasks">
       <Version>2.0.0-beta1</Version>
@@ -214,11 +235,20 @@
       <OutputCopy Include="..\LICENSE" OutputPath="Docs\MovementRecorder\LICENSE" />
       <OutputCopy Include="..\THIRD-PARTY-NOTICES.md" OutputPath="Docs\MovementRecorder\THIRD-PARTY-NOTICES.md" />
       <OutputCopy Include="..\licenses\LiteDB-LICENSE.txt" OutputPath="Docs\MovementRecorder\licenses\LiteDB-LICENSE.txt" />
+      <OutputCopy Include="..\licenses\BSIPA.AssemblyPublicizer-LICENSE.txt" OutputPath="Docs\MovementRecorder\licenses\BSIPA.AssemblyPublicizer-LICENSE.txt" />
       <OutputCopy Include="..\licenses\System.Buffers-LICENSE.txt" OutputPath="Docs\MovementRecorder\licenses\System.Buffers-LICENSE.txt" />
       <OutputCopy Include="..\licenses\System.Buffers-THIRD-PARTY-NOTICES.txt" OutputPath="Docs\MovementRecorder\licenses\System.Buffers-THIRD-PARTY-NOTICES.txt" />
     </ItemGroup>
   </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- Non-SDK projects must emit the runtime access attribute added by Publicize. -->
+  <Target Name="WritePublicizedAssemblyAttributes" BeforeTargets="CoreCompile" DependsOnTargets="Publicize">
+    <WriteCodeFragment Language="C#" AssemblyAttributes="@(AssemblyAttribute)" OutputFile="$(IntermediateOutputPath)PublicizedAssemblyInfo.cs" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)PublicizedAssemblyInfo.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)PublicizedAssemblyInfo.cs" />
+    </ItemGroup>
+  </Target>
   <Target Name="EmbedReplayLibraries" BeforeTargets="AssignTargetPaths">
     <ItemGroup>
       <EmbeddedResource Include="$(PkgLiteDB)\lib\net45\LiteDB.dll">

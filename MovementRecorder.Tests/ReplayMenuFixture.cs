@@ -85,23 +85,33 @@ namespace SiraUtil.Submissions
 }
 
 public enum BeatmapDifficulty { Easy, Normal, Hard, Expert, ExpertPlus }
-public interface IDifficultyBeatmap
+public sealed class BeatmapCharacteristicSO { public string serializedName = "Standard"; }
+public readonly struct BeatmapKey
 {
-    TestBeatmapLevel level { get; }
-    TestBeatmapSet parentDifficultyBeatmapSet { get; }
-    BeatmapDifficulty difficulty { get; }
+    public readonly string levelId;
+    public readonly BeatmapCharacteristicSO beatmapCharacteristic;
+    public readonly BeatmapDifficulty difficulty;
+    public BeatmapKey(string id, BeatmapCharacteristicSO characteristic, BeatmapDifficulty diff)
+    { levelId = id; beatmapCharacteristic = characteristic; difficulty = diff; }
 }
-public class TestBeatmapLevel { public string levelID, songName; }
-public class CustomPreviewBeatmapLevel : TestBeatmapLevel { public string customLevelPath; }
-public sealed class TestBeatmapSet { public TestCharacteristic beatmapCharacteristic = new TestCharacteristic(); }
-public sealed class TestCharacteristic { public string serializedName = "Standard"; }
-public sealed class TestBeatmap : IDifficultyBeatmap
+public class BeatmapLevel
 {
-    public TestBeatmapLevel level { get; set; } = new TestBeatmapLevel { levelID = "song", songName = "Test song" };
-    public TestBeatmapSet parentDifficultyBeatmapSet { get; set; } = new TestBeatmapSet();
-    public BeatmapDifficulty difficulty { get; set; } = BeatmapDifficulty.Expert;
+    public string levelID = "song", songName = "Test song";
+    public object GetColorScheme(BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty) => null;
 }
-public sealed class StandardLevelDetailViewController : MonoBehaviour { public IDifficultyBeatmap selectedDifficultyBeatmap; }
+public sealed class StandardLevelDetailViewController : MonoBehaviour { public BeatmapKey beatmapKey; public BeatmapLevel beatmapLevel; }
+public enum BeatmapLevelDataVersion { Original, NoEnvironmentKeywords }
+public interface IBeatmapLevelData { }
+public sealed class TestLevelData : IBeatmapLevelData { }
+public struct LoadBeatmapLevelDataResult { public bool isError; public IBeatmapLevelData beatmapLevelData; }
+public sealed class BeatmapLevelsModel
+{
+    public Task<LoadBeatmapLevelDataResult> Loading = Task.FromResult(new LoadBeatmapLevelDataResult { beatmapLevelData = new TestLevelData() });
+    public int LoadRequests;
+    public Task<LoadBeatmapLevelDataResult> LoadBeatmapLevelDataAsync(string id, BeatmapLevelDataVersion version, System.Threading.CancellationToken token)
+    { LoadRequests++; return Loading; }
+}
+public sealed class EnvironmentsListModel { }
 public sealed class GameplayModifiers
 {
     public enum SongSpeed { Normal }
@@ -120,16 +130,21 @@ public sealed class PracticeSettings { public float startSongTime, songSpeedMul;
 public sealed class MenuTransitionsHelper
 {
     public int Starts;
-    public IDifficultyBeatmap StartedChart;
-    public void StartStandardLevel(string mode, IDifficultyBeatmap chart, TestBeatmapLevel level, object environment, object color,
-        GameplayModifiers modifiers, TestPlayerSettings settings, PracticeSettings practice, string back, bool a, bool b,
-        object before, Action<object, object> finished, object after) { Starts++; StartedChart = chart; }
+    public BeatmapKey StartedChart;
+    public void StartStandardLevel(string mode, in BeatmapKey chart, BeatmapLevel level, IBeatmapLevelData data, object environment, object color, object beatmapColor,
+        GameplayModifiers modifiers, TestPlayerSettings settings, PracticeSettings practice, EnvironmentsListModel environments, string back, bool a, bool b,
+        object before, object switched, Action<object, object> finished, object restarted) { Starts++; StartedChart = chart; }
 }
 namespace SongCore
 {
     public sealed class TestRequirements { public string[] _requirements; }
     public sealed class TestDifficultyData { public TestRequirements additionalDifficultyData; }
-    public static class Collections { public static TestDifficultyData RetrieveDifficultyData(IDifficultyBeatmap chart) => null; }
+    public sealed class TestFolder { public string folderPath; }
+    public sealed class TestSaveData { public TestFolder customLevelFolderInfo; }
+    public static class Collections {
+        public static TestDifficultyData RetrieveDifficultyData(BeatmapLevel level, BeatmapKey key) => null;
+        public static TestSaveData GetLoadedSaveData(string id) => null;
+    }
 }
 namespace HMUI
 {

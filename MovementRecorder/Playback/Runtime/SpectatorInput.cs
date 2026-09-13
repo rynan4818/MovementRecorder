@@ -39,7 +39,7 @@ namespace MovementRecorder.Playback.Runtime
                 foreach (string field in new[] { "_laserPointerPrefab", "_cursorPrefab", "_defaultLaserPointerLength", "_laserPointerWidth" })
                     GameAccess.Set(_pointer, field, GameAccess.Get<object>(sourcePointer, field));
                 GameAccess.Set(_pointer, "_leftVRController", _left); GameAccess.Set(_pointer, "_rightVRController", _right);
-                GameAccess.Set(_pointer, "_vrController", _right);
+                // VRPointer.Awake selects the initial hand after the inactive root is enabled.
                 _module = eventObject.AddComponent<VRInputModule>();
                 GameAccess.Set(_module, "_vrPointer", _pointer);
                 GameAccess.Set(_module, "_rumblePreset", GameAccess.Get<object>(source, "_rumblePreset"));
@@ -75,7 +75,8 @@ namespace MovementRecorder.Playback.Runtime
             }
             else
             {
-                _module.ClearSelection(); _pointer.DestroyLaserAndHit();
+                GameAccess.Call(_module, "ClearSelection");
+                // VRPointer.OnDisable hides both hand pointers; retain them for the next opening.
                 _root.SetActive(false);
                 if (_baseEvents != null) _baseEvents.enabled = _baseEnabled;
                 if (_baseModule != null) _baseModule.enabled = _baseModuleEnabled;
@@ -87,7 +88,7 @@ namespace MovementRecorder.Playback.Runtime
         public void Update(Camera view, bool fpfc)
         {
             if (!Visible) return;
-            _module.useMouseForPressInput = fpfc;
+            _left.mouseMode = _right.mouseMode = fpfc;
             _left.enabled = _right.enabled = !fpfc;
             if (fpfc)
             {
@@ -97,7 +98,7 @@ namespace MovementRecorder.Playback.Runtime
             else
             {
                 // PlaybackRuntime runs before EventSystem.Update. Give raycasts this frame's hand pose.
-                _left.Update(); _right.Update();
+                GameAccess.Call(_left, "Update"); GameAccess.Call(_right, "Update");
             }
         }
         public void Dispose()
