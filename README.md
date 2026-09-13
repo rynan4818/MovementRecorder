@@ -3,17 +3,18 @@
 
 [ChroMapper-CameraMovement](https://github.com/rynan4818/ChroMapper-CameraMovement)で記録したファイルを読み込んで再生することができます。
 
-`BS1.29.1` ブランチには、Beat Saber内で記録したモデルを第三者視点から鑑賞するリプレイ機能を追加しています。MOVEMENT RECORDERタブの「リプレイ」からメニューを開き、ファイルを選んで「リプレイ開始」を押します。一時停止・シーク、ファイル一覧のキャッシュ、既存の頭の移動距離DBの参考表示に対応します。基本再生は実機確認済みで、ポーズ・シーク・保存抑止などの個別確認を継続しています。[リプレイの使い方](docs/Replay-ja.md) と [実装・検証報告](docs/Replay-Implementation-ja.md) を参照してください。
+0.3系では、Beat Saber内で記録したモデルを第三者視点から鑑賞できます。**MOVEMENT RECORDER → Replay** でファイルを選び、**Start Replay** を押します。一時停止・シーク、表情同期、Camera2のREPLAY連携、コピー元アバターの表示・オフセット設定に対応します。[リプレイの使い方](docs/Replay-ja.md) を参照してください。
 
-再生中の元アバターのBlendShape表情を反映する機能も追加しました。Animatorを必須とせず、VRM系の表情制御も同じ方法で扱います。ポーズ・シーク中は表情を保持します。記録当時の表情や材質変化の再現は対象外です。ユーザーの実機テストでは問題が見られないとの報告を受けています。[表情同期の検証報告](docs/Replay-BlendShape-Live-Fix-ja.md) を参照してください。
+現在のブランチは **BS1.29.1 / MovementRecorder 0.3.0 / Beat Saber 1.29.0-1.29.1** です。
 
-鑑賞用HMDカメラを既存カメラの複製方式に変更し、アバターの元レイヤーを保持する修正を追加しました。外部カメラと床ミラーの既存アバター表示設定を利用します。この修正はビルド・自動検証済みで、ユーザーからも動作確認OKとの報告を受けています。[カメラ・レイヤー修正の検証報告](docs/Replay-Camera-Clone-Layer-Fix-ja.md) を参照してください。
+| Beat Saber | MovementRecorder | ブランチ |
+| --- | --- | --- |
+| 1.29.0-1.29.1 | 0.3.0 | BS1.29.1 |
+| 1.37.1-1.39.1 | 0.3.1 | BS1.37.1 |
+| 1.40.0-1.40.8 | 0.3.2 | BS1.40.0 |
+| 1.42.0-1.44.1 | 0.3.3 | main |
 
-リプレイの選択・開始・読込中止をメニュー内へまとめ、選択中のファイルを色と文字で強調しました。日時・記録秒数・対象数・サイズは1行で表示します。「鑑賞設定」ではコピー元アバターの表示ON/OFFも保存できます（初期値OFF）。ユーザー報告を受けた選択行の表示修正版は自動検証済みで、実機確認はこれからです。[最新の検証報告](docs/Replay-Menu-Row-Fix-ja.md) を参照してください。
-
-Camera2導入時は、MovementRecorderのリプレイをCamera2のREPLAYシーンへ通知するようにしました。Camera2.dllへの参照・必須依存は追加しておらず、CameraPlusのみの環境も対象です。公開APIの照合・自動テスト・Releaseビルドは成功し、実機での表示確認はこれからです。[Camera2連携の検証報告](docs/Replay-Camera2-Integration-ja.md) を参照してください。
-
-コピー元アバターにHMDと同じオフセットを適用する設定を追加しました（初期値OFF）。コピー元が非表示、適用OFF、XYZがすべて0の場合は専用処理を生成しません。鑑賞位置のXYZとON/OFFは設定ファイルに保存します。実機の表示と再起動後の保存・復元は未確認です。[オフセットと設定保存の検証報告](docs/Replay-Source-Avatar-Offset-ja.md) を参照してください。
+1.44.2以降は未対応です。リリース準備中の各版のビルド・実機確認状況は[リリース準備](docs/Replay-Release-Preparation-ja.md)を参照してください。
 
 以下のmodの記録はデフォルトで設定してあります。
 
@@ -29,8 +30,8 @@ Camera2導入時は、MovementRecorderのリプレイをCamera2のREPLAYシー�
 ※設定ファイルを作成すれば、任意のオブジェクトも記録可能です。
 
 # インストール方法
-1. [リリースページ](https://github.com/rynan4818/MovementRecorder/releases)から最新のMovementRecorderのリリースをダウンロードします。
-2. ダウンロードしたzipファイルを`Beat Saber`フォルダに解凍して、`Plugin`フォルダに`MovementRecorder.dll`ファイルをコピーします。
+1. [リリースページ](https://github.com/rynan4818/MovementRecorder/releases)から使用するBeat Saberに対応したMovementRecorderのリリースをダウンロードします。
+2. ダウンロードしたzipファイルを`Beat Saber`フォルダに解凍して、`Plugins`フォルダに`MovementRecorder.dll`ファイルをコピーします。
 3. 依存modは`SiraUtil`, `BSML`, `SongCore`の3つです。基本modなので既に入っているはずです。
 
 # 使い方

@@ -34,11 +34,10 @@ namespace MovementRecorder.Playback.Compatibility
                 }
                 else if (name == "ScoreSaber")
                 {
-                    Hook(assembly, "ScoreSaber.Features.Replays.Installers.RecordInstaller", "InstallBindings");
-                    Hook(assembly, "ScoreSaber.Features.ScoreSubmission.ScoreSubmissionController", "HandleStandardLevelFinished");
-                    var registry = RequireType(assembly, "ScoreSaber.Features.Replays.ReplayStateRegistry");
-                    var state = AccessTools.Property(registry, "IsPlaybackEnabled") ?? throw Unsupported(name, "replay state");
-                    _otherReplayChecks.Add(() => (bool)state.GetValue(null, null));
+                    var api = ScoreSaberReplayApi.Resolve(type => assembly.GetType(type, false));
+                    Hook(api.Record);
+                    Hook(api.Submit);
+                    _otherReplayChecks.Add(api.IsPlaybackEnabled);
                 }
                 else if (name == "SongPlayHistoryContinued" || name == "SongPlayHistory")
                 {

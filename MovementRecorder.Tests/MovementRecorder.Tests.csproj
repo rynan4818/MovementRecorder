@@ -22,6 +22,7 @@
     <Compile Include="..\MovementRecorder\Playback\Runtime\GameAccess.cs" Link="Product\GameAccess.cs" />
     <Compile Include="..\MovementRecorder\Playback\ReplaySession.cs" Link="Product\ReplaySession.cs" />
     <Compile Include="..\MovementRecorder\Playback\Compatibility\Camera2ReplayInterop.cs" Link="Product\Camera2ReplayInterop.cs" />
+    <Compile Include="..\MovementRecorder\Playback\Compatibility\ScoreSaberReplayApi.cs" Link="Product\ScoreSaberReplayApi.cs" />
     <Compile Include="..\MovementRecorder\Playback\UI\ReplayMenuService.cs" Link="Product\ReplayMenuService.cs" />
     <Compile Include="..\MovementRecorder\Playback\UI\ReplayFile*.cs" Link="Product\%(Filename)%(Extension)" />
   </ItemGroup>

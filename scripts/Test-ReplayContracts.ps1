@@ -246,10 +246,21 @@ try {
     foreach ($contract in @(
         @('BeatLeader', 'BeatLeader.Installers.OnGameplayCoreInstaller', 'InitRecorder'),
         @('BeatLeader', 'BeatLeader.Utils.ScoreUtil', 'ProcessReplay'),
-        @('ScoreSaber', 'ScoreSaber.Features.Replays.Installers.RecordInstaller', 'InstallBindings'),
-        @('ScoreSaber', 'ScoreSaber.Features.ScoreSubmission.ScoreSubmissionController', 'HandleStandardLevelFinished'),
         @('SongPlayHistoryContinued', 'SongPlayHistoryContinued.Plugin', 'SaveRecord')
     )) { if ($loadedAssemblies.ContainsKey($contract[0])) { Check-Method $contract[1] $contract[2] } }
+    if ($loadedAssemblies.ContainsKey('ScoreSaber')) {
+        if ($types.ContainsKey('ScoreSaber.Features.Replays.ReplayStateRegistry')) {
+            Check-Method 'ScoreSaber.Features.Replays.Installers.RecordInstaller' 'InstallBindings'
+            Check-Method 'ScoreSaber.Features.ScoreSubmission.ScoreSubmissionController' 'HandleStandardLevelFinished'
+            Check-Method 'ScoreSaber.Features.Replays.ReplayStateRegistry' 'get_IsPlaybackEnabled' 'System.Boolean'
+        } else {
+            Check-Method 'ScoreSaber.Core.ReplaySystem.Installers.RecordInstaller' 'InstallBindings'
+            Check-Method 'ScoreSaber.Core.Daemons.UploadDaemon' 'Three'
+            Check-Method 'ScoreSaber.Plugin' 'get_Instance' 'ScoreSaber.Plugin'
+            Check-Method 'ScoreSaber.Plugin' 'get_ReplayState' 'ScoreSaber.Core.ReplaySystem.ReplayState'
+            Check-Field 'ScoreSaber.Core.ReplaySystem.ReplayState' 'IsPlaybackEnabled' 'System.Boolean'
+        }
+    }
     # HDT distance recording is allowed. Neither HDT nor HDT Counter may be a patch target,
     # and their private APIs must not be required for replay startup or contract validation.
     $compatibilityTypes = @($product.MainModule.Types | Where-Object Namespace -eq 'MovementRecorder.Playback.Compatibility')
@@ -357,9 +368,9 @@ try {
     }
     $reader = [IO.StreamReader]::new($resources['MovementRecorder.manifest.json'].GetResourceStream())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-    if ($manifest.gameVersion -ne '1.20.0') { throw 'gameVersion was changed' }
+    if ($manifest.gameVersion -ne '1.29.0') { throw 'gameVersion was changed' }
     $checks++
-    if ($manifest.version -ne '0.2.4') { throw 'Plugin version was changed' }
+    if ($manifest.version -ne '0.3.0') { throw 'Plugin version was changed' }
     if ($manifest.dependsOn.PSObject.Properties.Name -contains 'Camera2' -or $manifest.dependsOn.PSObject.Properties.Name -contains 'CameraPlus') {
         throw 'Camera MODs must remain optional'
     }

@@ -1,0 +1,173 @@
+{
+  "CheckedAt": "2026-09-13",
+  "StatisticsSource": "https://raw.githubusercontent.com/rakkyo150/player_count_by_bs_version/refs/heads/master/data/history.json",
+  "StatisticsSHA256": "4F1CC504C47DD2EDE00AD865B9017515BE0D4722CF45F85EBF50BF133ACA6A9C",
+  "LatestTimestamp": "20260911_161527",
+  "KnownPc": 902.0,
+  "UnknownPc": 1,
+  "Population": "Japan-registered BeatLeader users active during the past month; steam + oculuspc; Quest excluded",
+  "BranchStatistics": [
+    {
+      "Branch": "BS129",
+      "Latest": 264,
+      "LatestPercent": 29.27,
+      "FourSnapshotPercent": 28.92
+    },
+    {
+      "Branch": "BS133",
+      "Latest": 0,
+      "LatestPercent": 0.0,
+      "FourSnapshotPercent": 0.0
+    },
+    {
+      "Branch": "BS134",
+      "Latest": 16,
+      "LatestPercent": 1.77,
+      "FourSnapshotPercent": 2.04
+    },
+    {
+      "Branch": "BS135",
+      "Latest": 6,
+      "LatestPercent": 0.67,
+      "FourSnapshotPercent": 0.69
+    },
+    {
+      "Branch": "BS137",
+      "Latest": 120,
+      "LatestPercent": 13.3,
+      "FourSnapshotPercent": 13.32
+    },
+    {
+      "Branch": "BS140",
+      "Latest": 433,
+      "LatestPercent": 48.0,
+      "FourSnapshotPercent": 47.67
+    },
+    {
+      "Branch": "BS141",
+      "Latest": 0,
+      "LatestPercent": 0.0,
+      "FourSnapshotPercent": 0.0
+    },
+    {
+      "Branch": "BS142",
+      "Latest": 3,
+      "LatestPercent": 0.33,
+      "FourSnapshotPercent": 0.47
+    }
+  ],
+  "RecentSnapshots": [
+    {
+      "Timestamp": "20260821_131207",
+      "KnownPC": 903.0,
+      "UnknownPC": 1,
+      "Branches": {
+        "BS129": 251,
+        "BS133": 0,
+        "BS134": 21,
+        "BS135": 5,
+        "BS137": 122,
+        "BS140": 436,
+        "BS141": 0,
+        "BS142": 5
+      },
+      "Selected": 814,
+      "SelectedPercent": 90.144
+    },
+    {
+      "Timestamp": "20260828_222418",
+      "KnownPC": 917.0,
+      "UnknownPC": 1,
+      "Branches": {
+        "BS129": 264,
+        "BS133": 0,
+        "BS134": 20,
+        "BS135": 7,
+        "BS137": 121,
+        "BS140": 436,
+        "BS141": 0,
+        "BS142": 5
+      },
+      "Selected": 826,
+      "SelectedPercent": 90.076
+    },
+    {
+      "Timestamp": "20260904_161026",
+      "KnownPC": 905.0,
+      "UnknownPC": 1,
+      "Branches": {
+        "BS129": 270,
+        "BS133": 0,
+        "BS134": 17,
+        "BS135": 7,
+        "BS137": 120,
+        "BS140": 424,
+        "BS141": 0,
+        "BS142": 4
+      },
+      "Selected": 818,
+      "SelectedPercent": 90.387
+    },
+    {
+      "Timestamp": "20260911_161527",
+      "KnownPC": 902.0,
+      "UnknownPC": 1,
+      "Branches": {
+        "BS129": 264,
+        "BS133": 0,
+        "BS134": 16,
+        "BS135": 6,
+        "BS137": 120,
+        "BS140": 433,
+        "BS141": 0,
+        "BS142": 3
+      },
+      "Selected": 820,
+      "SelectedPercent": 90.909
+    }
+  ],
+  "ProposedVersion": "0.3.0",
+  "ProposedBranches": [
+    "BS1.29.1",
+    "BS1.37.1",
+    "BS1.40.0",
+    "BS1.42.0"
+  ],
+  "SourceCodeVersions": 25,
+  "GameDllVersions": 41,
+  "LegacyComparedContracts": 137,
+  "LegacyComparedContractDifferences": 0,
+  "Interpretation": "Source and DLL metadata investigation only; no cross-version replay runtime validation yet",
+  "ProposedCoverage": {
+    "Count": 820,
+    "Denominator": 902,
+    "Percent": 90.91
+  },
+  "LatestFamilyPolicy": "Keep 1.42.0-1.44.1 regardless of current user share. Exclude 1.44.2 and above as explicitly requested.",
+  "Pre129BinaryEvidence": [
+    {
+      "Version": "1.25.0",
+      "BufferedLightType": false,
+      "CallbackBehaviorField": false,
+      "TweenOwnerField": false
+    },
+    {
+      "Version": "1.26.0",
+      "BufferedLightType": false,
+      "CallbackBehaviorField": true,
+      "TweenOwnerField": true
+    },
+    {
+      "Version": "1.28.0",
+      "BufferedLightType": false,
+      "CallbackBehaviorField": true,
+      "TweenOwnerField": true
+    },
+    {
+      "Version": "1.29.0",
+      "BufferedLightType": true,
+      "CallbackBehaviorField": true,
+      "TweenOwnerField": true
+    }
+  ]
+}
