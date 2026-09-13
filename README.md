@@ -3,6 +3,20 @@
 
 [ChroMapper-CameraMovement](https://github.com/rynan4818/ChroMapper-CameraMovement)で記録したファイルを読み込んで再生することができます。
 
+0.3系では、Beat Saber内で記録したモデルを第三者視点から鑑賞できます。**MOVEMENT RECORDER → Replay** でファイルを選び、**Start Replay** を押します。一時停止・シーク、表情同期、Camera2のREPLAY連携、コピー元アバターの表示・オフセット設定に対応します。[リプレイの使い方](docs/Replay-ja.md) を参照してください。
+
+現在のブランチは **BS1.40.0 / MovementRecorder 0.3.3 / Beat Saber 1.40.0-1.40.8** です。
+
+| Beat Saber | MovementRecorder | ブランチ |
+| --- | --- | --- |
+| 1.29.0-1.29.1 | 0.3.0 | BS1.29.1 |
+| 1.37.1-1.37.3 | 0.3.1 | BS1.37.1 |
+| 1.37.4-1.39.1 | 0.3.1 | BS1.37.4 |
+| 1.40.0-1.40.8 | 0.3.2 | BS1.40.0 |
+| 1.42.0-1.44.1 | 0.3.3 | main |
+
+1.44.2以降は未対応です。リリース準備中の各版のビルド・実機確認状況は[リリース準備](docs/Replay-Release-Preparation-ja.md)を参照してください。
+
 以下のmodの記録はデフォルトで設定してあります。
 
 - アバター
@@ -18,8 +32,8 @@
 ※設定ファイルを作成すれば、任意のオブジェクトも記録可能です。
 
 # インストール方法
-1. [リリースページ](https://github.com/rynan4818/MovementRecorder/releases)から最新のMovementRecorderのリリースをダウンロードします。
-2. ダウンロードしたzipファイルを`Beat Saber`フォルダに解凍して、`Plugin`フォルダに`MovementRecorder.dll`ファイルをコピーします。
+1. [リリースページ](https://github.com/rynan4818/MovementRecorder/releases)から使用するBeat Saberに対応したMovementRecorderのリリースをダウンロードします。
+2. ダウンロードしたzipファイルを`Beat Saber`フォルダに解凍して、`Plugins`フォルダに`MovementRecorder.dll`ファイルをコピーします。
 3. 依存modは`SiraUtil`, `BSML`, `SongCore`の3つです。基本modなので既に入っているはずです。
 
 # 使い方
@@ -33,7 +47,7 @@
 
 ![image](https://github.com/rynan4818/MovementRecorder/assets/14249877/7e14669e-e391-42d8-9269-719d8c8bee7a)
 
-* `Movement Recorder Enabled` : 本modの機能を有効にします。
+* `Movement Recorder Enabled` : 記録を有効にします。リプレイ機能はこの設定とは独立しています。
 * `WIP Map Only` : WIP譜面でのみ記録します。
 * `Avatar Movement` : アバター表示で使用しているmodを選択します。
 * `Saber Movement` : セイバー表示で使用しているmodを選択します。

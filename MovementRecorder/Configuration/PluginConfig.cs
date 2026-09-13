@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Linq;
 using IPA.Config.Stores;
 using IPA.Config.Stores.Attributes;
 using IPA.Config.Stores.Converters;
@@ -149,13 +150,56 @@ namespace MovementRecorder.Configuration
         public virtual double oneObjectSaveTime { get; set; } = 0;
         public virtual bool notDisposeMemory { get; set; } = false;
         public virtual int minMemoryAllocation { get; set; } = 6;
+        public virtual bool showReplaySourceAvatar { get; set; } = false;
+        public virtual bool offsetReplaySourceAvatarWithHmd { get; set; } = false;
+        public virtual float replayObserverX { get; set; } = 0;
+        public virtual float replayObserverY { get; set; } = 0;
+        public virtual float replayObserverZ { get; set; } = -2;
+
+        internal static float ObserverValue(float value, float min, float max, float fallback = 0) =>
+            float.IsNaN(value) || float.IsInfinity(value) ? fallback : System.Math.Max(min, System.Math.Min(max, value));
+
+        internal void ValidateObserverPosition()
+        {
+            float x = ObserverValue(replayObserverX, -5, 5), y = ObserverValue(replayObserverY, -3, 3), z = ObserverValue(replayObserverZ, -8, 5, -2);
+            if (replayObserverX != x) replayObserverX = x;
+            if (replayObserverY != y) replayObserverY = y;
+            if (replayObserverZ != z) replayObserverZ = z;
+        }
         /// <summary>
         /// これは、BSIPAが設定ファイルを読み込むたびに（ファイルの変更が検出されたときを含めて）呼び出されます
         /// </summary>
         public virtual void OnReload()
         {
-            // 設定ファイルを読み込んだ後の処理を行う
+            MigrateSearchSettings();
+            ValidateObserverPosition();
         }
+
+        internal void MigrateSearchSettings()
+        {
+            if (searchSettings == null) return;
+            var defaults = new PluginConfig().searchSettings;
+            var updated = new List<SearchSetting>(searchSettings);
+            var avatar = defaults.Single(s => s.name == "CustomAvatar");
+            bool changed = false;
+            for (int i = 0; i < updated.Count; i++)
+            {
+                var current = updated[i];
+                if (current?.name != avatar.name || current.type != avatar.type) continue;
+                // Match the complete former preset. Preserve even a partly customized preset.
+                if (current.rescaleString == LegacyAvatarPath(avatar.rescaleString) &&
+                    IsLegacyAvatarList(current.topObjectStrings, avatar.topObjectStrings) &&
+                    IsLegacyAvatarList(current.searchStirngs, avatar.searchStirngs) &&
+                    IsLegacyAvatarList(current.exclusionStrings, avatar.exclusionStrings))
+                { updated[i] = avatar; changed = true; }
+            }
+            if (!updated.Any(s => s?.name == "CustomSabersLite"))
+            { updated.Add(defaults.Single(s => s.name == "CustomSabersLite")); changed = true; }
+            if (changed) searchSettings = updated;
+        }
+        private static string LegacyAvatarPath(string path) => path.Replace("/SpawnedAvatar", "/Avatar Container/SpawnedAvatar");
+        private static bool IsLegacyAvatarList(List<string> current, List<string> modern) =>
+            current != null && current.SequenceEqual(modern.Select(LegacyAvatarPath));
 
         /// <summary>
         /// これを呼び出すと、BSIPAに設定ファイルの更新を強制します。 これは、ファイルが変更されたことをBSIPAが検出した場合にも呼び出されます。

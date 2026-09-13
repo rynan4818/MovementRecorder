@@ -1,6 +1,9 @@
 ﻿<bg xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
 	xsi:schemaLocation='https://monkeymanboy.github.io/BSML-Docs/ https://raw.githubusercontent.com/monkeymanboy/BSML-Docs/gh-pages/BSMLSchema.xsd'>
   <settings-container>
+    <horizontal pref-height="8" spacing="2">
+      <button text="Replay" on-click="open-replay"/>
+    </horizontal>
     <checkbox-setting text='Movement Recorder Enabled' value='recorderEnabled' apply-on-change="true"></checkbox-setting>
     <checkbox-setting text='WIP Map Only' value='wipOnly' apply-on-change="true"></checkbox-setting>
     <dropdown-list-setting text="Avatar Movement" choices='avatarMovementChoices' value="avatarMovement" apply-on-change="true"></dropdown-list-setting>

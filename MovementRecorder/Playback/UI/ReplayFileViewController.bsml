@@ -1,0 +1,35 @@
+<bg>
+  <vertical spacing="0.5" pad="2">
+    <text text="~chart" rich-text="false" font-size="4" align="Center" pref-height="5" overflow-mode="Ellipsis"/>
+    <text text="~selected-file" font-color="~selection-color" rich-text="false" font-size="3" pref-height="5" overflow-mode="Ellipsis"/>
+    <horizontal spacing="2" pref-height="6">
+      <button text="Refresh List" on-click="refresh" interactable="~can-edit" pref-width="27"/>
+      <button text="Rebuild Cache" on-click="rebuild" interactable="~can-edit" pref-width="35"/>
+      <text text="~distance-heading" font-size="2.8" align="Right"/>
+    </horizontal>
+    <vertical active="~show-files" spacing="1" pref-height="41">
+      <custom-list id="files" contents="rows" select-cell="select-row" visible-cells="3" cell-size="10" list-width="110" show-scrollbar="true">
+        <horizontal pref-width="108" pref-height="10">
+          <text id="row-info" text="~title" rich-text="false" word-wrapping="false" font-size="2.7" align="Left" pref-width="84" pref-height="10" overflow-mode="Ellipsis"/>
+          <text id="row-distance" text="~distance" rich-text="false" font-size="4" align="Right" pref-width="21" pref-height="10"/>
+        </horizontal>
+      </custom-list>
+      <text text="~details" font-color="~info-color" rich-text="false" font-size="2.4" pref-height="10"/>
+    </vertical>
+    <vertical active="~show-settings" spacing="0.5" pref-height="41">
+      <checkbox-setting text="No Fail (Play to End)" value="no-fail" interactable="~can-edit" apply-on-change="true" pref-height="6"/>
+      <checkbox-setting text="Show Source Avatar" value="show-source-avatar" interactable="~can-edit" apply-on-change="true" pref-height="6"/>
+      <checkbox-setting text="Apply HMD Offset to Source Avatar" value="offset-source-avatar" hover-hint="Only applies when the source avatar is shown. Changes take effect when the next replay starts." interactable="~can-edit" apply-on-change="true" pref-height="6"/>
+      <increment-setting text="View Offset: Left / Right (m)" value="observer-x" interactable="~can-edit" min="-5" max="5" increment="0.1" apply-on-change="true" pref-height="6"/>
+      <increment-setting text="View Offset: Up / Down (m)" value="observer-y" interactable="~can-edit" min="-3" max="3" increment="0.1" apply-on-change="true" pref-height="6"/>
+      <increment-setting text="View Offset: Forward / Back (m)" value="observer-z" interactable="~can-edit" min="-8" max="5" increment="0.1" apply-on-change="true" pref-height="6"/>
+    </vertical>
+    <text text="~status" rich-text="false" font-size="2.8" pref-height="6"/>
+    <horizontal spacing="2" pref-height="8">
+      <button text="Details" on-click="details-toggle" pref-width="16"/>
+      <button text="~settings-label" on-click="settings-toggle" pref-width="26"/>
+      <button text="Start Replay" on-click="start-replay" interactable="~can-replay" pref-width="32"/>
+      <button text="Cancel Load" on-click="cancel-load" interactable="~can-cancel" pref-width="25"/>
+    </horizontal>
+  </vertical>
+</bg>

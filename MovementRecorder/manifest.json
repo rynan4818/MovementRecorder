@@ -1,15 +1,22 @@
-﻿{
+{
   "$schema": "https://raw.githubusercontent.com/bsmg/BSIPA-MetadataFileSchema/master/Schema.json",
   "id": "MovementRecorder",
   "name": "MovementRecorder",
   "author": "Rynan",
-  "version": "0.2.7",
-  "description": "Record object movement",
-  "gameVersion": "1.37.1",
+  "version": "0.3.3",
+  "description": "Record object movement and replay recordings.",
+  "gameVersion": "1.40.0",
+  "loadAfter": [
+    "Camera2"
+  ],
   "dependsOn": {
-    "BSIPA": "^4.3.4",
-    "SiraUtil": "^3.1.11",
-    "BeatSaberMarkupLanguage": "^1.11.3",
-    "SongCore": "^3.14.8"
+    "BSIPA": "^4.3.6",
+    "SiraUtil": "^3.2.1",
+    "BeatSaberMarkupLanguage": "^1.12.5",
+    "SongCore": "^3.15.2"
+  },
+  "links": {
+    "project-home": "https://github.com/rynan4818/MovementRecorder",
+    "project-source": "https://github.com/rynan4818/MovementRecorder"
   }
 }

@@ -1,4 +1,4 @@
-﻿using BeatSaberMarkupLanguage.Attributes;
+using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.GameplaySetup;
 using MovementRecorder.Configuration;
 using MovementRecorder.Models;
@@ -6,14 +6,19 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using Zenject;
+using System.Threading;
+using MovementRecorder.Playback.UI;
 
 namespace MovementRecorder.Views
 {
     public class SettingTabViewController : IInitializable, IDisposable
     {
         private bool _disposedValue;
-        private readonly RecordData _recordData;
-        private readonly GameplaySetup _gameplaySetup;
+        private RecordData _recordData;
+        private ReplayMenuService _replay;
+        private GameplaySetup _gameplaySetup;
+        private SynchronizationContext _uiContext;
+        [UIAction("open-replay")] private void OpenReplay() { _replay.OpenMenu(); }
         public static readonly string TabName = "MOVEMENT RECORDER";
         public string ResourceName => string.Join(".", this.GetType().Namespace, this.GetType().Name);
 
@@ -26,14 +31,17 @@ namespace MovementRecorder.Views
         [UIComponent("recorderLog")]
         public readonly TextMeshProUGUI recorderLog;
 
-        private SettingTabViewController(RecordData recordData, GameplaySetup gameplaySetup)
+        [Inject]
+        private void Constractor(RecordData recordData, ReplayMenuService replay, GameplaySetup gameplaySetup)
         {
             this._recordData = recordData;
-            this._gameplaySetup = gameplaySetup;
+            _replay = replay;
+            _gameplaySetup = gameplaySetup;
         }
         public void Initialize()
         {
-            this._gameplaySetup.AddTab(TabName, this.ResourceName, this, MenuType.Solo);
+            _uiContext = SynchronizationContext.Current;
+            _gameplaySetup.AddTab(TabName, this.ResourceName, this, MenuType.Solo);
             this.avatarMovementChoices.Add(PluginConfig.NoneCapture);
             this.saberMovementChoices.Add(PluginConfig.NoneCapture);
             this.otherMovementChoices.Add(PluginConfig.NoneCapture);
@@ -55,7 +63,7 @@ namespace MovementRecorder.Views
                 if (disposing)
                 {
                     this._recordData.recorderLog -= this.OnRecorderLog;
-                    this._gameplaySetup?.RemoveTab(TabName);
+                    _gameplaySetup?.RemoveTab(TabName);
                 }
                 this._disposedValue = true;
             }
@@ -182,7 +190,9 @@ namespace MovementRecorder.Views
         }
         public void OnRecorderLog(string log)
         {
-            this.recorderLog.text = log;
+            if (_uiContext != null && SynchronizationContext.Current != _uiContext)
+            { _uiContext.Post(_ => OnRecorderLog(log), null); return; }
+            if (!_disposedValue && recorderLog != null) recorderLog.text = log;
         }
     }
 }
