@@ -3,7 +3,7 @@
   "id": "MovementRecorder",
   "name": "MovementRecorder",
   "author": "Rynan",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Record object movement and replay recordings.",
   "gameVersion": "1.37.4",
   "loadAfter": [

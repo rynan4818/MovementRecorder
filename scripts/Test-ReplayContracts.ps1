@@ -370,7 +370,7 @@ try {
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
     if ($manifest.gameVersion -ne '1.37.4') { throw 'gameVersion was changed' }
     $checks++
-    if ($manifest.version -ne '0.3.1') { throw 'Plugin version was changed' }
+    if ($manifest.version -ne '0.3.2') { throw 'Plugin version was changed' }
     if ($manifest.dependsOn.PSObject.Properties.Name -contains 'Camera2' -or $manifest.dependsOn.PSObject.Properties.Name -contains 'CameraPlus') {
         throw 'Camera MODs must remain optional'
     }
