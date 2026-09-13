@@ -1,47 +1,62 @@
 # リプレイ版のリリース準備
 
-2026-09-13。公開前の作業記録です。対応範囲は下表とし、移植した各世代のHMDでの動作確認は公開前に実施してください。
+2026-09-13。現在のブランチは **BS1.37.1 / MovementRecorder 0.3.1 / Beat Saber 1.37.1-1.37.3** です。採番の変更を反映した[設計第3版](Replay-Release-Branches-Plan-v3-ja.md)を基準にしています。
 
-| ブランチ | MOD | Beat Saber | manifest.gameVersion |
-| --- | --- | --- | --- |
-| BS1.29.1 | 0.3.0 | 1.29.0-1.29.1 | 1.29.0 |
-| BS1.37.1 | 0.3.1 | 1.37.1-1.37.3 | 1.37.1 |
-| BS1.37.4 | 0.3.1 | 1.37.4-1.39.1 | 1.37.4 |
-| BS1.40.0 | 0.3.2 | 1.40.0-1.40.8 | 1.40.0 |
-| main | 0.3.3 | 1.42.0-1.44.1 | 1.42.0 |
+| Beat Saber | MovementRecorder | ブランチ |
+| --- | --- | --- |
+| 1.29.0-1.29.1 | 0.3.0 | BS1.29.1 |
+| 1.37.1-1.37.3 | 0.3.1 | BS1.37.1 |
+| 1.37.4-1.39.1 | 0.3.2 | BS1.37.4 |
+| 1.40.0-1.40.8 | 0.3.3 | BS1.40.0 |
+| 1.42.0-1.44.1 | 0.3.4 | main |
 
-1.44.2以上は未対応です。将来その対応を始める際に、現在のmainからBS1.42.0を切り出します。Legatoは導入しません。詳しい判断と依存バージョンは[設計第2版](Replay-Release-Branches-Plan-v2-ja.md)を参照してください。
+5つのGitHubリリースに標準ZIPを1つずつ添付します。1.44.2以上は未対応です。将来その対応を始める際に、現在のmainからBS1.42.0を切り出します。Legatoは導入しません。manifestの依存バージョンは設計第3版に記載しています。
+
+## 確認結果
+
+- このブランチは164件の自動テスト、対象世代の実DLLを使ったReleaseビルドに成功しました。
+- 対応範囲内の手元の26バージョンすべてで、型・メソッドの定義アセンブリと呼び出し署名が解決することを確認しました。[範囲別の結果](Replay-Release-Validation-2026-09-13.json)を参照してください。
+- 各系統の両端では、リプレイに使う内部API、埋め込みmanifest、任意MODの保存抑止APIも照合します。実ゲームにMODがない場合は作業フォルダーの参照専用コピーを使い、本体は変更しません。
+- ZIPは標準名、全エントリー、元ファイルとのSHA-256一致を検査します。このブランチの配布物は8ファイルです。
+- **今回の移植版をHMD上で動作確認する工程は残っています。** 自動テストやDLLの静的照合だけで、ゲーム上の表示・操作まで検証済みとはしません。1.29.1で開発中に得た動作確認報告は、他世代の実機確認とは区別します。
 
 ## Visual Studioと同じRelease ZIPを作る
 
-Visual StudioでMovementRecorderプロジェクトの参照先（BeatSaberDir）を対象ゲームに設定し、Releaseでビルドします。既存のcsproj.userによる設定を使えます。スクリプトからは同じプロジェクトを呼びます。
+各作業ツリーのMovementRecorder.slnを開き、Releaseでビルドします。今回作成したローカル作業ツリーには、対応するSteam内のゲームを指すMovementRecorder.csproj.userを設定します。この個人用ファイルはGitへ含めません。他のPCではBeat Saber Modding Toolsまたはcsproj.userのBeatSaberDir / ReferencePathで参照先を指定してください。
+
+スクリプトは同じcsprojをVisual StudioのMSBuildで呼び出します。このブランチの基準となるゲームは1.37.1です。
 
 ```powershell
-./scripts/Build-Replay.ps1 -GameDirectory 'C:/Program Files (x86)/Steam/steamapps/common/Beat Saber'
+./scripts/Build-Replay.ps1 -GameDirectory 'C:/Program Files (x86)/Steam/steamapps/common/Beat Saber_1.37.1'
 ./scripts/Test-ReleasePackage.ps1
-./scripts/Test-ReplayContracts.ps1 -GameDirectory 'C:/Program Files (x86)/Steam/steamapps/common/Beat Saber'
+./scripts/Test-ReplayContracts.ps1 -GameDirectory 'C:/Program Files (x86)/Steam/steamapps/common/Beat Saber_1.37.1'
+./scripts/Test-AssemblyReferences.ps1 -GameDirectory 'C:/Program Files (x86)/Steam/steamapps/common/Beat Saber_1.37.1'
 dotnet test MovementRecorder.Tests/MovementRecorder.Tests.csproj
 ```
 
-参照先はブランチに合うゲームへ変更してください。0.3.0の通常参照先は動作確認済みの1.29.1です。Visual StudioのMSBuildと.NET Framework 4.7.2のターゲットパックを使用します。スクリプトは既定でローカルNuGetキャッシュから復元し、初回は必要に応じて `-NuGetSource https://api.nuget.org/v3/index.json` を指定します。
+.NET Framework 4.7.2のターゲットパックを使用します。スクリプトの既定のNuGet復元元はローカルキャッシュです。初回は必要に応じて `-NuGetSource https://api.nuget.org/v3/index.json` を指定します。テストには.NET 10 SDKを使います。
 
-ZIPはBeatSaberModdingTools.Tasks 2.0.0-beta1が `MovementRecorder/bin/Release/zip` に自動生成します。ファイル名を変更する処理はありません。例は `MovementRecorder-0.3.0-bs1.29.0-<commit>.zip` です。対応範囲の終端はZIP名には付けません。ビルドは実ゲームへ配置しません。
+ZIPはBeatSaberModdingTools.Tasks 2.0.0-beta1がMovementRecorder/bin/Release/zipへ自動生成します。このブランチの名前は `MovementRecorder-0.3.1-bs1.37.1-<commit>.zip` です。対応範囲の終端は付けず、名前変更や独自のZIP作成は行いません。ビルド時のゲームへのコピーは無効です。
 
-配布内容はPluginsのDLL、利用説明、ライセンスの8ファイルです。Test-ReleasePackage.ps1は標準名、全エントリー、各ファイルのSHA-256を検証します。ZIP圧縮時刻はビルドごとに変わり得るため、別ビルド間の比較にはZIP全体のハッシュではなく内容を使います。
+配布内容はPlugins/MovementRecorder.dll、利用説明書、ライセンスです。依存MODやゲーム本体のDLL、調査資料、ユーザーの記録・DB・設定は含めません。圧縮時刻とコンパイラー生成情報はビルドごとに変わるため、別ビルド間のZIP全体のハッシュ一致は条件にしません。標準ファイル名・内容・DLLの版番号を確認します。
 
-## このブランチの確認
+Test-ReplayContracts.ps1とTest-AssemblyReferences.ps1の `-DependencyDirectory` は、MODが不足するゲームを照合するための任意のDLL参照フォルダーです。対象のゲーム本体を優先し、足りない依存MODだけを補います。別バージョンのMain.dllやHMUI.dll等は置かないでください。
 
-- BS1.37.1 / 0.3.1：164件の自動テスト成功。Releaseビルド成功。
-- 1.37.1：内部API 273項目、コンパイル済みの呼び出し370件の署名を照合。
-- 1.37.3：内部API 275項目、同じDLLの呼び出し370件を照合。旧ScoreSaberの保存抑止APIも確認。
-- 1.37.4以降ではメニューの定義DLLが変わるためBS1.37.4に分離。追加設計は[1.37.4の境界](Replay-Release-1374-Boundary-Plan-ja.md)を参照。
-- Main / HMUIの非公開APIはBSIPA.AssemblyPublicizer.MSBuild 0.5.0でビルド用参照を生成。実ゲームのDLLは変更しません。生成したアクセス属性が組み込まれることも確認済みです。
-- 1.37系のHMDでの動作確認は未実施です。1.29.1で得られたユーザーテスト結果は移植先の動作保証には流用しません。
+## 公開前の実機確認
 
-## 公開前の確認とリリース文
+重点確認版は1.29.0 / 1.29.1、1.37.1 / 1.37.3、1.37.4 / 1.39.1、1.40.0 / 1.40.8、1.42.0 / 1.44.1です。
 
-HMDでの一覧選択、開始、ポーズ・再開、前後シーク、音声・モデル同期、床ミラー、表情、コピー元の表示とオフセット保存、Camera2のREPLAY切替を確認します。通常プレイを前後に挟み、成績・外部MODの記録保存の抑止がリプレイ中だけに適用されることも確認します。
+- 一覧の表示・選択色、ファイル変更、開始・終了・連続再生。
+- ポーズ・再開・前後シーク、音声・セイバー・アバターの同期。1.40系以降はNJS変更を含む譜面でも確認。
+- 表情、元レイヤー、床ミラー、コピー元表示・オフセットON/OFF、非表示時の省略、0.1m調整と再起動後の設定復元。
+- Camera2のREPLAYシーンだけに割り当てたカメラの表示、CameraPlus利用時とカメラMODなしの表示。
+- 通常プレイを前後に挟み、成績・ScoreSaber・BeatLeader・対応履歴MODの保存抑止がリプレイだけに適用されること。
+- 通常の記録、WIP譜面への記録保存、旧標準の探索設定の移行と編集済み設定の保持。
 
-原稿は[v0.3.0](release-notes/v0.3.0.md)、[v0.3.1](release-notes/v0.3.1.md)、[v0.3.2](release-notes/v0.3.2.md)、[v0.3.3](release-notes/v0.3.3.md)です。検証完了後、対応ブランチの確定コミットにタグを付け、そのコミットから標準ZIPをビルドして0.3.1はbs1.37.1とbs1.37.4の2つ、他は各1つを添付します。0.3.1のタグはBS1.37.4を指し、bs1.37.1の対応コミットはZIP名とリリース作業記録で明記します。他リリースへのリンクは4件公開後に有効になります。
+## リリース文とGitHub公開
 
-リリース本文に古い設定ファイルの削除案内は引き継ぎません。旧標準の探索設定だけを新世代で移行し、ユーザーが編集した設定やHMDオフセットを保持します。ここでの原稿作成はGitHubへの公開ではありません。
+本文原稿は[v0.3.0](release-notes/v0.3.0.md)、[v0.3.1](release-notes/v0.3.1.md)、[v0.3.2](release-notes/v0.3.2.md)、[v0.3.3](release-notes/v0.3.3.md)、[v0.3.4](release-notes/v0.3.4.md)です。既存リリースの形式を引き継ぎ、古い設定ファイルの一括削除案内は追加していません。各リリースの冒頭に対象ゲーム範囲を明記します。
+
+実機確認後、各タグv0.3.0～v0.3.4が対応ブランチの確定コミットを指すようにして、そのコミットから生成した標準ZIPを1つずつ添付します。0.3.1に2つのZIPを添付する案は採用しません。リリース本文の相互リンクは5件の公開後に有効になるため、公開順に応じて確認します。
+
+ローカルでは、各移植と本書・本文原稿をコミットして配布ZIPを用意します。既存mainの履歴はno-fast-forwardのマージで残しています。push、タグ作成、GitHub公開、実ゲームへのインストールは行っていません。

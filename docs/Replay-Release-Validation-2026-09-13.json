@@ -1,0 +1,89 @@
+{
+  "CheckedAt": "2026-09-13",
+  "Method": "Mono.Cecil resolution of compiled TypeRef and MemberRef against the game assembly scope and signatures",
+  "GameRuntimeTested": false,
+  "Notes": "Static API compatibility only. Approved core MOD DLLs in a separate workspace directory supplement unmodded game folders.",
+  "Branches": [
+    {
+      "Branch": "BS1.29.1",
+      "PluginVersion": "0.3.0",
+      "ManifestGameVersion": "1.29.0",
+      "UnitTests": 160,
+      "GameVersions": [
+        "1.29.0",
+        "1.29.1"
+      ],
+      "TypeReferences": 226,
+      "MemberReferences": 368,
+      "Result": "Passed"
+    },
+    {
+      "Branch": "BS1.37.1",
+      "PluginVersion": "0.3.1",
+      "ManifestGameVersion": "1.37.1",
+      "UnitTests": 164,
+      "GameVersions": [
+        "1.37.1",
+        "1.37.2",
+        "1.37.3"
+      ],
+      "TypeReferences": 232,
+      "MemberReferences": 370,
+      "Result": "Passed"
+    },
+    {
+      "Branch": "BS1.37.4",
+      "PluginVersion": "0.3.2",
+      "ManifestGameVersion": "1.37.4",
+      "UnitTests": 164,
+      "GameVersions": [
+        "1.37.4",
+        "1.37.5",
+        "1.38.0",
+        "1.39.0",
+        "1.39.1"
+      ],
+      "TypeReferences": 232,
+      "MemberReferences": 370,
+      "Result": "Passed"
+    },
+    {
+      "Branch": "BS1.40.0",
+      "PluginVersion": "0.3.3",
+      "ManifestGameVersion": "1.40.0",
+      "UnitTests": 166,
+      "GameVersions": [
+        "1.40.0",
+        "1.40.1",
+        "1.40.2",
+        "1.40.3",
+        "1.40.4",
+        "1.40.5",
+        "1.40.6",
+        "1.40.7",
+        "1.40.8"
+      ],
+      "TypeReferences": 235,
+      "MemberReferences": 372,
+      "Result": "Passed"
+    },
+    {
+      "Branch": "main",
+      "PluginVersion": "0.3.4",
+      "ManifestGameVersion": "1.42.0",
+      "UnitTests": 166,
+      "GameVersions": [
+        "1.42.0",
+        "1.42.1",
+        "1.42.2",
+        "1.42.3",
+        "1.43.0",
+        "1.44.0",
+        "1.44.1"
+      ],
+      "TypeReferences": 236,
+      "MemberReferences": 372,
+      "Result": "Passed"
+    }
+  ]
+}
