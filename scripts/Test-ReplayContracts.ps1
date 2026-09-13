@@ -50,7 +50,7 @@ function Check-Method([string]$type, [string]$method, [string]$returns = 'System
     $script:checks++
 }
 try {
-    foreach ($name in @('Main', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'UnityEngine.UI', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule')) {
+    foreach ($name in @('Main', 'GameplayCore', 'HMLib', 'HMUI', 'VRUI', 'Rendering', 'HMRendering', 'UnityEngine.UI', 'UnityEngine.CoreModule', 'UnityEngine.AnimationModule')) {
         $null = Read-Assembly (Join-Path $GameDirectory "Beat Saber_Data\Managed\$name.dll")
     }
     foreach ($name in @('BSML', 'SiraUtil', 'BeatLeader', 'ScoreSaber', 'SongPlayHistoryContinued')) {
@@ -108,6 +108,33 @@ try {
     Check-Method 'UnityEngine.EventSystems.EventSystem' 'set_current'
     Check-Method 'UnityEngine.EventSystems.EventSystem' 'UpdateModules'
     Check-Method 'UnityEngine.Animator' 'get_cullingMode' 'UnityEngine.AnimatorCullingMode'
+    Check-Field 'BloomPrePass' '_bloomPrePassRenderData' 'BloomPrePassRenderDataSO'
+    Check-Field 'BloomPrePass' '_renderData' 'BloomPrePassRenderDataSO/Data'
+    Check-Field 'MainEffectController' '_imageEffectController' 'ImageEffectController'
+    Check-Field 'MainEffectController' 'afterImageEffectEvent' 'System.Action`1<UnityEngine.RenderTexture>'
+    Check-Method 'BloomPrePass' 'SetMode'
+    Check-Method 'MainEffectController' 'OnEnable'
+    Check-Method 'CameraDepthTextureMode' 'Awake'
+    foreach ($field in @('m_Type0', 'm_Type1', 'm_Type2')) { Check-Field 'UnityEngine.RequireComponent' $field 'System.Type' }
+    Check-Method 'UnityEngine.GameObject' 'get_layer' 'System.Int32'
+    Check-Method 'UnityEngine.GameObject' 'set_layer'
+    Check-Method 'UnityEngine.Camera' 'get_cullingMask' 'System.Int32'
+    Check-Method 'UnityEngine.Camera' 'set_cullingMask'
+    $cameraClone = $product.MainModule.GetType('MovementRecorder.Playback.Runtime.SpectatorCameraClone')
+    if ($null -eq $cameraClone) { throw 'Missing spectator camera clone helper' }
+    $cloneCalls = @($cameraClone.Methods | Where-Object HasBody | ForEach-Object { $_.Body.Instructions } | Where-Object {
+        $_.Operand -is [Mono.Cecil.GenericInstanceMethod] -and $_.Operand.DeclaringType.FullName -eq 'UnityEngine.Object' -and $_.Operand.Name -eq 'Instantiate'
+    })
+    if ($cloneCalls.Count -ne 1 -or $cloneCalls[0].Operand.GenericArguments[0].FullName -ne 'UnityEngine.Camera' -or
+        $cloneCalls[0].Operand.Parameters.Count -ne 3 -or
+        $cloneCalls[0].Operand.Parameters[0].ParameterType -isnot [Mono.Cecil.GenericParameter] -or
+        $cloneCalls[0].Operand.Parameters[0].ParameterType.Position -ne 0 -or
+        $cloneCalls[0].Operand.Parameters[1].ParameterType.FullName -ne 'UnityEngine.Transform' -or
+        $cloneCalls[0].Operand.Parameters[2].ParameterType.FullName -ne 'System.Boolean') {
+        throw 'Spectator camera must be instantiated with its inactive parent supplied at creation'
+    }
+    $null = $cloneCalls[0].Operand.Resolve()
+    $checks++
     Check-Method 'UnityEngine.Animator' 'set_cullingMode'
     Check-Method 'UnityEngine.SkinnedMeshRenderer' 'get_sharedMesh' 'UnityEngine.Mesh'
     Check-Method 'UnityEngine.SkinnedMeshRenderer' 'GetBlendShapeWeight' 'System.Single'

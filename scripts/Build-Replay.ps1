@@ -36,6 +36,10 @@ if ($Package) {
         (Join-Path $repo 'docs\Replay-Native-Sabers-Fix-ja.md'),
         (Join-Path $repo 'docs\Replay-Pause-UI-Fix-ja.md'),
         (Join-Path $repo 'docs\Replay-BlendShape-Live-Fix-ja.md'),
+        (Join-Path $repo 'docs\Replay-Camera-Clone-Layer-Fix-ja.md'),
+        (Join-Path $repo 'docs\Replay-Camera-Clone-Layer-Fix-Plan-ja.md'),
+        (Join-Path $repo 'docs\Replay-Layer-Mirror-Fix-Plan-ja.md'),
+        (Join-Path $repo 'docs\Replay-BlendShape-Live-Fix-Plan-ja.md'),
         (Join-Path $repo 'THIRD-PARTY-NOTICES.md'), (Join-Path $repo 'LICENSE') -Destination $documentation
     Copy-Item -LiteralPath (Join-Path $repo 'licenses') -Destination $documentation -Recurse
     $zip = Join-Path $artifacts 'MovementRecorder-Replay-BS1.29.1-preview.zip'

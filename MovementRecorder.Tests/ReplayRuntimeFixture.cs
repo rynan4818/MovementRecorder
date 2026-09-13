@@ -22,6 +22,9 @@ namespace UnityEngine
     public sealed class Camera : Behaviour
     {
         public int cullingMask;
+        public RenderTexture targetTexture;
+        public float nearClipPlane = .1f, farClipPlane = 1000, depth;
+        public int depthTextureMode;
         private float _fieldOfView = 90, _aspect = 1.6f;
         public int ProjectionWrites;
         public float fieldOfView { get => _fieldOfView; set { CheckProjectionWrite(); _fieldOfView = value; } }

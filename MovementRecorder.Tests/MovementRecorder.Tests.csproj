@@ -16,6 +16,7 @@
     <Compile Include="..\MovementRecorder\Playback\Models\*.cs" Link="Product\%(Filename)%(Extension)" />
     <Compile Include="..\MovementRecorder\Playback\Runtime\RecordedSaberDriver.cs" Link="Product\RecordedSaberDriver.cs" />
     <Compile Include="..\MovementRecorder\Playback\Runtime\SpectatorRig.cs" Link="Product\SpectatorRig.cs" />
+    <Compile Include="..\MovementRecorder\Playback\Runtime\SpectatorCameraClone.cs" Link="Product\SpectatorCameraClone.cs" />
     <Compile Include="..\MovementRecorder\Playback\Runtime\SpectatorInput.cs" Link="Product\SpectatorInput.cs" />
     <Compile Include="..\MovementRecorder\Playback\Runtime\GameAccess.cs" Link="Product\GameAccess.cs" />
   </ItemGroup>

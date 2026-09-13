@@ -91,7 +91,7 @@ namespace MovementRecorder.Playback.Runtime
                 Pause(false);
                 try
                 {
-                    if (_rig == null) _rig = new SpectatorRig(_session, _player, _container);
+                    if (_rig == null) _rig = new SpectatorRig(_session, _player, _container, s => Plugin.Log?.Info(s));
                     EnsurePanel();
                     if (_seek == null)
                         _seek = new PlaybackSeekController(_audio, _callbacks, _objects, _spawn, _sounds, _song,
@@ -132,6 +132,7 @@ namespace MovementRecorder.Playback.Runtime
                 if (EndTime <= StartTime) throw new InvalidOperationException("記録と音声の再生範囲が重なりません。");
                 _driver.TakeControl();
                 _model = new RenderModelClone(_session.Clip, Plan, Profile.FreezeMissing, _driver.SaberRoots, s => Plugin.Log?.Warn(s));
+                _rig.SetModelLayerMask(_model.SyncLiveRendererLayers());
                 foreach (string skipped in _model.SkippedRenderers) Plugin.Log?.Warn("Replay renderer omitted: " + skipped);
                 Plugin.Log?.Info($"Replay models ready: {Plan.Sources.Count(t => t != null)} tracks, {_model.ModelRootCount} cloned avatar/other roots, 2 live sabers, {StartTime:0.000}–{EndTime:0.000}s");
                 _ready = true; _session.SetPhase(ReplayPhase.Seeking);
@@ -256,6 +257,7 @@ namespace MovementRecorder.Playback.Runtime
             try
             {
                 _model.KeepSourcesHidden(); _model.Apply(_audio.songTime); _driver.Apply(_audio.songTime);
+                _rig.SetModelLayerMask(_model.SyncLiveRendererLayers());
                 _model.SyncLiveExpressions(_session.Phase == ReplayPhase.Playing);
             }
             catch (Exception ex) { Fail(ex); }
@@ -295,6 +297,7 @@ namespace MovementRecorder.Playback.Runtime
         {
             if (_exiting) return;
             Pause(false); _ready = false; _model?.Dispose(); _model = null; _driver?.Dispose(); _driver = null;
+            _rig?.SetModelLayerMask(0);
             if (_binding != null) StopCoroutine(_binding);
             _session.ClearError(); _session.SetPhase(ReplayPhase.Binding); _binding = StartCoroutine(BindModels());
         }

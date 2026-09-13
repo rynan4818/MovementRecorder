@@ -73,6 +73,7 @@ namespace MovementRecorder.Playback.Models
             if (_transforms.TryGetValue(source, out var existing)) return existing;
             var parent = CopyAncestor(source.parent);
             var clone = new GameObject(source.name).transform; clone.SetParent(parent, false);
+            clone.gameObject.layer = source.gameObject.layer;
             clone.localPosition = source.localPosition; clone.localRotation = source.localRotation; clone.localScale = source.localScale;
             _transforms.Add(source, clone); return clone;
         }
@@ -80,7 +81,7 @@ namespace MovementRecorder.Playback.Models
         {
             if (IsLiveSaber(source) || _transforms.ContainsKey(source)) return;
             var clone = new GameObject(source.name).transform; clone.SetParent(parent, false);
-            clone.gameObject.layer = 0; // Visible to the normal HMD, including meshes hidden by first-person avatar layers.
+            clone.gameObject.layer = source.gameObject.layer;
             clone.localPosition = source.localPosition; clone.localRotation = source.localRotation; clone.localScale = source.localScale;
             clone.gameObject.SetActive(source.gameObject.activeSelf);
             _transforms.Add(source, clone);
@@ -169,6 +170,19 @@ namespace MovementRecorder.Playback.Models
                 var scale = _clip.Header.objectScales[i]; target.localScale = new Vector3(scale.x, scale.y, scale.z);
                 if (!active && !_freezeMissing) foreach (var r in _affectedRenderers[i]) if (r != null) r.forceRenderingOff = true;
             }
+        }
+        public int SyncLiveRendererLayers()
+        {
+            int mask = 0;
+            if (_disposed) return mask;
+            foreach (var pair in _renderers)
+            {
+                if (pair.Key == null || pair.Value == null) continue;
+                int layer = pair.Key.gameObject.layer;
+                if (pair.Value.gameObject.layer != layer) pair.Value.gameObject.layer = layer;
+                mask |= 1 << layer;
+            }
+            return mask;
         }
         public void KeepSourcesHidden()
         {

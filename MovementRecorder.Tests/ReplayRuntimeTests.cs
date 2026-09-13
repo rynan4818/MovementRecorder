@@ -274,6 +274,21 @@ namespace MovementRecorder.Tests
             scene.fpfc.Enabled = false; scene.main.camera.stereoTargetEye = StereoTargetEyeMask.Both;
             rig.Update(); Assert.Equal(2, rig.Camera.ProjectionWrites);
         }
+        [Theory] [InlineData(true)] [InlineData(false)]
+        public void ObserverMaskTracksSourceAndModelChangesWithoutChangingOtherCameras(bool originallyEnabled)
+        {
+            var scene = Scene(false); var source = scene.main.camera; source.enabled = originallyEnabled;
+            source.cullingMask = (1 << 8) | (1 << 6);
+            var external = new GameObject("Camera2").AddComponent<Camera>(); external.cullingMask = 1 << 3;
+            using var rig = new SpectatorRig(new ReplaySession(), scene.player, scene.container);
+            rig.SetModelLayerMask((1 << 3) | (1 << 10) | (1 << 31));
+            Assert.Equal((1 << 8) | (1 << 3) | (1 << 10) | (1 << 31), rig.Camera.cullingMask);
+            source.cullingMask = (1 << 12) | (1 << 6); Application.BeforeRender();
+            Assert.Equal((1 << 12) | (1 << 3) | (1 << 10) | (1 << 31), rig.Camera.cullingMask);
+            rig.SetModelLayerMask(0); Assert.Equal(1 << 12, rig.Camera.cullingMask);
+            Assert.Equal(1 << 3, external.cullingMask);
+            rig.Dispose(); Assert.Equal(originallyEnabled, source.enabled); Assert.Equal((1 << 12) | (1 << 6), source.cullingMask);
+        }
         [Fact] public void MenuControllerCopyRejectsSabersAndCleansUpPartialInitialization()
         {
             var scene = Scene(false); scene.right.gameObject.AddComponent<Saber>();

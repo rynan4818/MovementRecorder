@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Reflection;
 
 // Test doubles for object ownership, pose composition and Unity's destroyed-object semantics.
 // They do not simulate rendering, skinning, audio, XR tracking or frame scheduling.
@@ -17,13 +18,14 @@ namespace UnityEngine
         public Object() { Objects.Add(this); }
         public static T Instantiate<T>(T original, Transform parent, bool worldPositionStays) where T : Component
         {
-            var clone = CloneControllerObject(original.gameObject);
-            clone.transform.SetParent(parent, worldPositionStays);
+            var clone = CloneControllerObject(original.gameObject, parent);
             return clone.GetComponent<T>();
         }
-        private static GameObject CloneControllerObject(GameObject original)
+        private static GameObject CloneControllerObject(GameObject original, Transform parent)
         {
             var clone = new GameObject(original.name);
+            clone.SetActive(false); clone.transform.SetParent(parent, false);
+            clone.layer = original.layer; clone.tag = original.tag;
             clone.transform.localPosition = original.transform.localPosition;
             clone.transform.localRotation = original.transform.localRotation;
             clone.transform.localScale = original.transform.localScale;
@@ -31,24 +33,44 @@ namespace UnityEngine
             {
                 var copy = (Component)Activator.CreateInstance(component.GetType()); copy.gameObject = clone;
                 clone.Components.Add(copy);
-                foreach (var field in component.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-                    if (!field.IsInitOnly) field.SetValue(copy, field.GetValue(component));
+                for (var type = component.GetType(); type != typeof(Component); type = type.BaseType)
+                    foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                        if (!field.IsInitOnly && (field.IsPublic || field.IsDefined(typeof(SerializeField), true)))
+                            field.SetValue(copy, field.GetValue(component));
+                if (copy is Camera camera) camera.CopyFrom((Camera)component);
             }
-            foreach (var child in original.transform.Children) CloneControllerObject(child.gameObject).transform.SetParent(clone.transform, false);
+            foreach (var child in original.transform.Children) CloneControllerObject(child.gameObject, clone.transform);
             clone.SetActive(original.activeSelf);
             return clone;
+        }
+        public static void DestroyImmediate(Object value)
+        {
+            if (value is Component dependency)
+                foreach (var other in dependency.gameObject.GetComponents<Component>().Where(c => c != dependency))
+                    foreach (RequireComponent attribute in other.GetType().GetCustomAttributes(typeof(RequireComponent), true))
+                        if (new[] { attribute.m_Type0, attribute.m_Type1, attribute.m_Type2 }.Any(t => t != null && t.IsAssignableFrom(dependency.GetType())))
+                            throw new InvalidOperationException("Component is still required");
+            Destroy(value);
         }
         public static void Destroy(Object value)
         {
             if (ReferenceEquals(value, null)) return;
             value.DestroyCalls++;
             if (value.Destroyed) return;
-            value.Destroyed = true;
             if (value is GameObject gameObject)
             {
+                gameObject.SetActive(false);
                 foreach (var child in gameObject.transform.Children.ToArray()) Destroy(child.gameObject);
-                foreach (var component in gameObject.Components) Destroy(component);
+                foreach (var component in gameObject.Components.ToArray()) Destroy(component);
+                gameObject.transform.parent?.Children.Remove(gameObject.transform);
             }
+            else if (value is Component component)
+            {
+                component.Deactivate();
+                if (component.Awakened) component.Callback("OnDestroy");
+                component.gameObject.Components.Remove(component);
+            }
+            value.Destroyed = true;
         }
         protected void CheckAlive() { if (Destroyed) throw new InvalidOperationException("A destroyed Unity object was accessed"); }
         public static bool operator ==(Object left, Object right)
@@ -64,6 +86,15 @@ namespace UnityEngine
 
     public class Component : Object
     {
+        internal bool Awakened, ActiveCallback;
+        internal void Callback(string method) => GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.Invoke(this, null);
+        internal void Activate()
+        {
+            if (!gameObject.activeInHierarchy) return;
+            if (!Awakened) { Awakened = true; Callback("Awake"); }
+            if (this is Behaviour behaviour && behaviour.enabled && !ActiveCallback) { ActiveCallback = true; Callback("OnEnable"); }
+        }
+        internal void Deactivate() { if (ActiveCallback) { ActiveCallback = false; Callback("OnDisable"); } }
         public GameObject gameObject { get; internal set; }
         public Transform transform => gameObject.transform;
         public override string name { get => gameObject.name; set => gameObject.name = value; }
@@ -83,12 +114,19 @@ namespace UnityEngine
         public bool activeSelf { get; private set; } = true;
         public bool activeInHierarchy => activeSelf && (transform.parent == null || transform.parent.gameObject.activeInHierarchy);
         public int layer;
+        public string tag = "Untagged";
         public TestScene scene => TestScene.Default;
         public GameObject(string name) { this.name = name; transform = AddComponent<Transform>(); }
-        public void SetActive(bool value) { CheckAlive(); activeSelf = value; }
+        public void SetActive(bool value)
+        {
+            CheckAlive(); activeSelf = value;
+            foreach (var component in GetComponentsInChildren<Component>(true))
+                if (component.gameObject.activeInHierarchy) component.Activate(); else component.Deactivate();
+        }
         public T AddComponent<T>() where T : Component, new()
         {
-            CheckAlive(); var component = new T { gameObject = this }; Components.Add(component); return component;
+            CheckAlive(); var component = new T { gameObject = this }; Components.Add(component);
+            if (transform != null) component.Activate(); return component;
         }
         public T GetComponent<T>() where T : Component { CheckAlive(); return Components.OfType<T>().FirstOrDefault(c => c != null); }
         public T[] GetComponents<T>() where T : Component { CheckAlive(); return Components.OfType<T>().Where(c => c != null).ToArray(); }

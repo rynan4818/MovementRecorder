@@ -16,11 +16,12 @@ namespace MovementRecorder.Playback.Runtime
         private readonly IVRPlatformHelper _platform;
         private readonly IFPFCSettings _fpfc;
         private readonly Transform _viewOrigin;
+        private int _modelLayerMask;
         private bool _disposed;
         public Vector3 Offset => new Vector3(_session.ObserverX, _session.ObserverY, _session.ObserverZ);
         public Camera Camera => _view;
 
-        public SpectatorRig(ReplaySession session, PlayerTransforms player, DiContainer container)
+        public SpectatorRig(ReplaySession session, PlayerTransforms player, DiContainer container, Action<string> log = null)
         {
             _session = session;
             _platform = container.Resolve<IVRPlatformHelper>();
@@ -39,8 +40,8 @@ namespace MovementRecorder.Playback.Runtime
             try
             {
                 _viewOrigin = new GameObject("Spectator Camera Origin").transform; _viewOrigin.SetParent(_root.transform, false);
-                _view = new GameObject("Spectator Camera").AddComponent<Camera>(); _view.transform.SetParent(_viewOrigin, false);
-                _view.CopyFrom(_source); _view.cullingMask |= 1; _view.enabled = true;
+                _view = SpectatorCameraClone.Create(_source, _viewOrigin, log);
+                UpdateCullingMask(); _view.enabled = true;
                 // The original tracked head and AudioListener remain the game's logical head.
                 _source.enabled = false;
                 _input = new SpectatorInput(_viewOrigin, container);
@@ -49,10 +50,17 @@ namespace MovementRecorder.Playback.Runtime
             catch { Dispose(); throw; }
         }
         private const string SceneModelResolverName = Models.SceneModelResolver.ReplayRootName;
+        public void SetModelLayerMask(int mask) { _modelLayerMask = mask; UpdateCullingMask(); }
+        private void UpdateCullingMask()
+        {
+            // Third-person viewing excludes the VRM first-person-only mesh to avoid drawing it twice.
+            if (_view != null && _source != null) _view.cullingMask = (_source.cullingMask | _modelLayerMask) & ~(1 << 6);
+        }
         public void SetControlsVisible(bool visible) { _input.SetVisible(visible); if (visible) Update(); }
         private void BeforeRender()
         {
             if (_view == null || _source == null) return;
+            UpdateCullingMask();
             // Keep the game's logical head live even on runtimes that stop tracking a disabled camera.
             // The observer offset belongs to a separate parent, so XR's final camera pose cannot erase it.
             if (_fpfc?.Enabled != true && _platform.GetNodePose(XRNode.Head, 0, out var position, out var rotation))
@@ -80,8 +88,13 @@ namespace MovementRecorder.Playback.Runtime
             if (_disposed) return;
             _disposed = true;
             Application.onBeforeRender -= BeforeRender;
-            _input?.Dispose(); if (_source != null) _source.enabled = _cameraEnabled;
-            if (_root != null) UnityEngine.Object.Destroy(_root);
+            if (_root != null) _root.SetActive(false);
+            try { _input?.Dispose(); }
+            finally
+            {
+                if (_source != null) _source.enabled = _cameraEnabled;
+                if (_root != null) UnityEngine.Object.Destroy(_root);
+            }
         }
     }
 }
